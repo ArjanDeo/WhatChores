@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="LazyCache" Version="2.4.0" />
     <PackageReference Include="pathoschild.http.fluentclient" Version="4.3.0" />
   </ItemGroup>
 

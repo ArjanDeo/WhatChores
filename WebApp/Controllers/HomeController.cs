@@ -7,6 +7,8 @@ namespace WebApp.Controllers
 {    
     public class HomeController : Controller
     {
+        
+        #region Object Declarations
         private readonly FluentClient client;
         private readonly CharacterLookupModel charModel;
         private readonly OverviewModel overviewModel;
@@ -16,11 +18,14 @@ namespace WebApp.Controllers
         readonly Dictionary<int, int> MythicKeystoneValues = [];
         readonly Dictionary<string, string> ApiPayload = [];
         readonly Dictionary<string, string> AccessTokenPayload = [];
+
         private readonly string? clientId;
         private readonly string? clientSecret;
+        #endregion
 
+        #region Constructor
         public HomeController(IConfiguration configuration)
-        {            
+        {
             client = new();
             charModel = new();
             overviewModel = new();
@@ -61,19 +66,28 @@ namespace WebApp.Controllers
             clientId = _configuration.GetValue<string>("ClientId");
             clientSecret = _configuration.GetValue<string>("ClientSecret");
         }
+        #endregion
+
+        #region Views
+
         public async Task<IActionResult> Index()
-            {
-            if (AppConstants.AccessToken is null) { await PostAccessToken(); } 
-                RaiderIOMythicPlusAffixesModel affixData = await GetMythicPlusAffixes();
-                WoWTokenPriceModel tokenData = await GetWoWToken();
-                overviewModel.AffixData = affixData;
-                overviewModel.WoWTokenData = tokenData;
-            return View(overviewModel);           
-              
-            }
+        {
+            if (AppConstants.AccessToken is null) { await PostAccessToken(); }
+
+            RaiderIOMythicPlusAffixesModel affixData = await GetMythicPlusAffixes();
+            WoWTokenPriceModel tokenData = await GetWoWToken();
+
+            overviewModel.AffixData = affixData;
+            overviewModel.WoWTokenData = tokenData;
+
+            return View(overviewModel);
+
+        }
+
         public async Task<IActionResult> CharacterLookup()
         {
-            RaiderIOCharacterDataModel characterData = await GetCharacterData();
+            // Malikéth
+            RaiderIOCharacterDataModel characterData = await GetCharacterData("FuryShiftz", "Tichondrius");
 
             charModel.MythicKeystoneValues = MythicKeystoneValues;
             charModel.RaiderIOCharacterData = characterData;
@@ -82,9 +96,14 @@ namespace WebApp.Controllers
             charModel.DungeonVaultSlots = intList;
             string color = await GetClassColor();
 
-                charModel.classColor = color;
+            charModel.classColor = color;
             return View(charModel);
         }
+
+        #endregion
+
+        #region API Requests (Get)
+        
         private async Task<WoWTokenPriceModel> GetWoWToken()
         {
             IResponse ResponseData = await client
@@ -102,6 +121,35 @@ namespace WebApp.Controllers
 
             return ResponseDataModel;
         }
+        
+        private async Task<RaiderIOCharacterDataModel> GetCharacterData(string name, string realm)
+        {
+            IResponse ResponseData = await client
+            .GetAsync("https://raider.io/api/v1/characters/profile")
+            .WithArgument("region", "us")
+            .WithArgument("name", name)
+            .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs")
+            .WithArgument("realm", realm);
+             
+            RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
+            return response;
+        }
+       
+        public async Task<RaiderIOMythicPlusAffixesModel> GetMythicPlusAffixes()
+        {
+            IResponse ResponseData = await client
+                .GetAsync("https://raider.io/api/v1/mythic-plus/affixes")
+                .WithArgument("region", "us");
+
+            RaiderIOMythicPlusAffixesModel ResponseDataModel = await ResponseData.As<RaiderIOMythicPlusAffixesModel>();
+            return ResponseDataModel;
+        }
+
+
+        #endregion
+
+        #region API Requests (Post)
+        
         public async Task<AccessTokenModel> PostAccessToken()
         {
             IResponse Response = await client
@@ -113,23 +161,10 @@ namespace WebApp.Controllers
             AppConstants.AccessToken = ResponseData;
             return ResponseData;
         }
-        private async Task<RaiderIOCharacterDataModel> GetCharacterData()
-        {
-            IResponse ResponseData = await client
-            .GetAsync("https://raider.io/api/v1/characters/profile?region=us&realm=tichondrius&name=malik%C3%A9th&fields=raid_progression%2Cmythic_plus_weekly_highest_level_runs");
 
-            RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
-            return response;
-        }
-        public async Task<RaiderIOMythicPlusAffixesModel> GetMythicPlusAffixes()
-        {
-            IResponse ResponseData = await client
-                .GetAsync("https://raider.io/api/v1/mythic-plus/affixes")
-                .WithArgument("region", "us");
+        #endregion
 
-            RaiderIOMythicPlusAffixesModel ResponseDataModel = await ResponseData.As<RaiderIOMythicPlusAffixesModel>();
-            return ResponseDataModel;
-        }
+        #region Functions
         private Task<List<int>> GetDungeonVaultSlots(RaiderIOCharacterDataModel characterData, Dictionary<int, int> mythicKeystoneValues)
         {
             List<int> intList = [];
@@ -143,6 +178,11 @@ namespace WebApp.Controllers
 
             intList = [.. intList.OrderByDescending(x => x)];
             return Task.FromResult(intList);
+        }
+
+        public async Task<string> Test(string name)
+        {
+            return string.IsNullOrEmpty(name) ? "Name is null or empty" : "Name is not null or empty";
         }
 
         private Task<string> GetClassColor()
@@ -164,13 +204,16 @@ namespace WebApp.Controllers
                 { "Evoker", "green" }
             };
             string color = classMap.TryGetValue(charModel.RaiderIOCharacterData.char_class, out string? value) ? value : "black";
-            
+
             return Task.FromResult(color);
         }
-       
+        #endregion
+
+        #region Privacy Page
         public IActionResult Privacy()
         {
             return View();
         }
+        #endregion
     }
 }

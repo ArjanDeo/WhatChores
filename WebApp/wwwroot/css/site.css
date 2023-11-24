@@ -37,3 +37,6 @@ body {
     height: auto;
     cursor: pointer;
 }
+.real-based {
+    background-image: url(~/assets/images/dragonflight_alexstrasza.jpeg)
+}

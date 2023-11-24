@@ -2,6 +2,7 @@
     var characterData = Model.RaiderIOCharacterData;
     var raidData = Model.RaiderIOCharacterData.raid_progression.amirdrassilthedreamshope;
     var mythicPlusData = Model.RaiderIOCharacterData.mythic_plus_weekly_highest_level_runs;
+    var top8Dungeons = Model.DungeonVaultSlots.Take(8).ToList();
 }
 
 @using WebApp.Models
@@ -9,9 +10,15 @@
 
 <div class="align-items-center">
     <h1 style="color: @Model.classColor">Character: @characterData.name, @characterData.char_class </h1>
-    <h2>@raidData.normal_bosses_killed/9N - @raidData.heroic_bosses_killed/9H Amirdrassil, the Dreams Hope</h2>
+    @if (raidData.summary != "0/9 N")
+    {
+        <h2>@raidData.normal_bosses_killed/9N - @raidData.heroic_bosses_killed/9H Amirdrassil, the Dreams Hope</h2>
+    } else
+    {
+        <h2>You haven't run Amirdrassil at all!</h2>
+    }
 </div>
-
+@if (mythicPlusData != null){
 <div>
     <ul>
         @foreach (var i in mythicPlusData)
@@ -23,40 +30,62 @@
         }
     </ul>
 </div>
+}<div class="container">
 
+    <div class="row height d-flex justify-content-center align-items-center">
+
+        <div class="col-md-8">
+
+            <div class="search">
+                <i class="fa fa-search"></i>
+                <input type="text" class="form-control" placeholder="Have a question? Ask Now">
+                <button onclick="getCharName()" class="btn btn-primary">Search</button>
+            </div>
+
+        </div>
+
+    </div>
+</div>
 <div>
+    @if (mythicPlusData.Count != 0) { 
     <h4>You've completed @mythicPlusData.Count mythic plus runs this week!</h4>
     <p>You've unlocked these Great Vault slots:</p>
     <ul>
         @{
-            var top8Dungeons = Model.DungeonVaultSlots.Take(8).ToList();
-
             if (top8Dungeons.Any())
             {
-                int mythicSlot1 = top8Dungeons.FirstOrDefault();
-                if (mythicSlot1 != 0)
+                if (top8Dungeons.Count >= 1)
                 {
-                    <li>Complete 1 Heroic, Mythic, or Timewalking Dungeon: Ilvl @mythicSlot1</li>
+                int mythicSlot1 = top8Dungeons.FirstOrDefault();
+                <li>Complete 1 Heroic, Mythic, or Timewalking Dungeon: Ilvl @mythicSlot1</li>
                 }
-
                 if (top8Dungeons.Count >= 4)
                 {
-                    int mythicSlot2 = top8Dungeons.Take(4).Min();
-                    if (mythicSlot2 >= 4)
-                    {
-                        <li>Complete 4 Heroic, Mythic, or Timewalking Dungeons: Ilvl @mythicSlot2</li>
-                    }
+                    int mythicSlot2 = top8Dungeons.Take(4).Min();                    
+                    <li>Complete 4 Heroic, Mythic, or Timewalking Dungeons: Ilvl @mythicSlot2</li>
+                    
                 }
 
                 if (top8Dungeons.Count >= 8)
                 {
-                    int mythicSlot3 = top8Dungeons.Min();
-                    if (mythicSlot3 >= 8)
-                    {
-                        <li>Complete 8 Heroic, Mythic, or Timewalking Dungeons: Ilvl @mythicSlot3</li>
-                    }
+                    int mythicSlot3 = top8Dungeons.Min();                   
+                    <li>Complete 8 Heroic, Mythic, or Timewalking Dungeons: Ilvl @mythicSlot3</li>
                 }
             }
         }
     </ul>
+       
+        <h3>You need to complete @if (mythicPlusData.Count < 4)
+            {
+                @(4 - @mythicPlusData.Count
+                    )
+            } else {
+                @(8 - mythicPlusData.Count
+                    )
+            }
+            more dungeons to unlock your next slot.</h3>
+    } else
+    {
+        <h2>No Mythic+ done this week!</h2>
+    }
 </div>
