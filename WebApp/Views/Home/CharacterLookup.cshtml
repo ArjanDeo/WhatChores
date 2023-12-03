@@ -1,103 +1,5 @@
-﻿@{   
-    // var characterData = Model.RaiderIOCharacterData;
-    // var raidData = Model.RaiderIOCharacterData.raid_progression.amirdrassilthedreamshope;
-    // var mythicPlusData = Model.RaiderIOCharacterData.mythic_plus_weekly_highest_level_runs;
-    // var top8Dungeons = Model.DungeonVaultSlots.Take(8).ToList();
-}
-
-@using WebApp.Models
+﻿@using WebApp.Models
 @model CharacterLookupModel
-@*
-@if (Model != null) { 
-<div class="align-items-center">
-    <h1 style="color: @Model.classColor">Character: @characterData.name, @characterData.char_class </h1>
-    @if (raidData.summary != "0/9 N")
-    {
-        <h2>@raidData.normal_bosses_killed/9N - @raidData.heroic_bosses_killed/9H Amirdrassil, the Dreams Hope</h2>
-    } else
-    {
-        <h2>You haven't run Amirdrassil at all!</h2>
-    }
-</div>
-@if (mythicPlusData != null){
-<div>
-    <ul>
-        @foreach (var i in mythicPlusData)
-        {
-            <li>
-                @i.dungeon :
-                @i.mythic_level
-            </li>
-        }
-    </ul>
-</div>
-}
-<div>
-    @if (mythicPlusData.Count != 0) { 
-    <h4>You've completed @mythicPlusData.Count mythic plus runs this week!</h4>
-    <p>You've unlocked these Great Vault slots:</p>
-    <ul>
-        @{
-            if (top8Dungeons.Any())
-            {
-                if (top8Dungeons.Count >= 1)
-                {
-                int mythicSlot1 = top8Dungeons.FirstOrDefault();
-                <li>Complete 1 Heroic, Mythic, or Timewalking Dungeon: Ilvl @mythicSlot1</li>
-                }
-                if (top8Dungeons.Count >= 4)
-                {
-                    int mythicSlot2 = top8Dungeons.Take(4).Min();                    
-                    <li>Complete 4 Heroic, Mythic, or Timewalking Dungeons: Ilvl @mythicSlot2</li>
-                    
-                }
-
-                if (top8Dungeons.Count >= 8)
-                {
-                    int mythicSlot3 = top8Dungeons.Min();                   
-                    <li>Complete 8 Heroic, Mythic, or Timewalking Dungeons: Ilvl @mythicSlot3</li>
-                }
-            }
-        }
-    </ul>
-       
-        <h3>You need to complete @if (mythicPlusData.Count < 4)
-            {
-                @(4 - @mythicPlusData.Count
-                    )
-            } else {
-                @(8 - mythicPlusData.Count
-                    )
-            }
-            more dungeons to unlock your next slot.</h3>
-    } else
-    {
-        <h2>No Mythic+ done this week!</h2>
-    }
-    </div>
-} else
-{
-    <div class="container">
-
-        <div class="row height d-flex justify-content-center align-items-center">
-
-            <div class="col-md-8">
-
-                <div class="search">
-                    <i class="fa fa-search"></i>
-                    @using (Html.BeginForm("GetChar", "Home", FormMethod.Post))
-                    {
-                        <input type="text" class="form-control" id="name" placeholder="Enter Character Name">
-                        <input type="text" class="form-control" id="realm" placeholder="Enter Character Realm">
-                        <input type="submit" value="CLic mE" />
-                    }
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-} *@
 @{
 if (Model != null)
 {
@@ -119,21 +21,26 @@ if (Model != null)
             <h2>You haven't run Amirdrassil at all!</h2>
         }
     </div>
-    @if (mythicPlusData != null)
-    {
-        <div>
-        <header>Mythic+ runs this week:</header>
-            <ul>
-                @foreach (var i in mythicPlusData)
-                {
-                    <li>
-                        +@i.mythic_level
-                        @i.dungeon                       
-                    </li>
-                }
-            </ul>
-        </div>
-    }
+        @if (mythicPlusData != null)
+        {
+            int dungeonsDisplayed = 0;
+            <div>
+                <header>Top 10 mythic+ runs this week:</header>
+                <ul>
+                    @foreach (var run in mythicPlusData)
+                    {
+                        if (dungeonsDisplayed >= 10)
+                        {
+                            break;
+                        }
+                        <li>
+                            +@run.mythic_level @run.dungeon
+                        </li>
+                        dungeonsDisplayed++;
+                    }
+                </ul>
+            </div>
+        }
     <div>
         @if (mythicPlusData.Count != 0)
         {
@@ -164,19 +71,22 @@ if (Model != null)
                 }
             </ul>
 
-            <h3>
-                You need to complete @if (mythicPlusData.Count < 4)
-                {
-                    @(4 - @mythicPlusData.Count
-                        )
-                }
-                else
-                {
-                    @(8 - mythicPlusData.Count
-                        )
-                }
-                more dungeons to unlock your next slot.
-            </h3>
+           
+   <h3>
+    @if (mythicPlusData.Count < 4)
+    {
+        <text>You need to complete </text>@(4 - mythicPlusData.Count) @(" more dungeons" + (4 - mythicPlusData.Count == 1 ? "" : "s") + " to unlock your next slot.")
+    }
+    else if (mythicPlusData.Count < 8)
+    {
+        <text>You need to complete </text> @(8 - mythicPlusData.Count) @(" more dungeons" + (8 - mythicPlusData.Count == 1 ? "" : "s") + " to unlock your next slot.")
+    }
+    else
+    {
+        <text>You've unlocked all M+ slots!</text>
+    }
+    </h3>
+
         }
         else
         {

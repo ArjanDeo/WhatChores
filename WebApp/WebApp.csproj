@@ -7,12 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LazyCache" Version="2.4.0" />
-    <PackageReference Include="pathoschild.http.fluentclient" Version="4.3.0" />
+    <Compile Remove="wwwroot\NewFolder\**" />
+    <Content Remove="wwwroot\NewFolder\**" />
+    <EmbeddedResource Remove="wwwroot\NewFolder\**" />
+    <None Remove="wwwroot\NewFolder\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\NewFolder\" />
+    <PackageReference Include="LazyCache" Version="2.4.0" />
+    <PackageReference Include="pathoschild.http.fluentclient" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

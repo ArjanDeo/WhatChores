@@ -78,8 +78,7 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Index()
         {
             
-            if (AppConstants.AccessToken is null) { await PostAccessToken(); }
-            
+            if (AppConstants.AccessToken is null) { await PostAccessToken(); }            
             
             RaiderIOMythicPlusAffixesModel affixData = await GetMythicPlusAffixes();
             WoWTokenPriceModel tokenData = await GetWoWToken();
@@ -101,10 +100,7 @@ namespace WebApp.Controllers
 
         private async Task<WoWTokenPriceModel> GetWoWToken()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            string cacheKey = $"GetWoWToken_{methodName}";
-
-            return await cache.GetOrAddAsync(cacheKey, async () =>
+            return await cache.GetOrAddAsync("GetWoWToken", async () =>
             {
                 IResponse ResponseData = await client
                 .GetAsync("https://us.api.blizzard.com/data/wow/token/index")
@@ -125,10 +121,8 @@ namespace WebApp.Controllers
         }      
       
         public async Task<RaiderIOMythicPlusAffixesModel> GetMythicPlusAffixes()
-        {           
-            string cacheKey = $"MythicPlusAffixes";
-
-            return await cache.GetOrAddAsync(cacheKey, async () =>
+        {
+            return await cache.GetOrAddAsync("MythicPlusAffixes", async () =>
             {
                 IResponse ResponseData = await client
                 .GetAsync("https://raider.io/api/v1/mythic-plus/affixes")
@@ -176,9 +170,8 @@ namespace WebApp.Controllers
         #region API Requests (Post)
         
         public async Task<AccessTokenModel> PostAccessToken()
-        {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            string cacheKey = $"MythicPlusAffixes_{methodName}";
+        {           
+            string cacheKey = $"PostAccessToken";
             return await cache.GetOrAddAsync(cacheKey, async () =>
             {
                 IResponse Response = await client
@@ -196,22 +189,31 @@ namespace WebApp.Controllers
         #endregion
 
         #region Functions
+
         private Task<List<int>> GetDungeonVaultSlots(RaiderIOCharacterDataModel characterData, Dictionary<int, int> mythicKeystoneValues)
         {
             List<int> intList = [];
+
             foreach (var run in characterData.mythic_plus_weekly_highest_level_runs)
             {
                 if (mythicKeystoneValues.TryGetValue(run.mythic_level, out int value))
                 {
                     intList.Add(value);
                 }
+                else if (run.mythic_level > 20)
+                {
+                    // If the key level is greater than 20, assign the maximum score
+                    intList.Add(mythicKeystoneValues[20]);
+                }
             }
 
             intList = [.. intList.OrderByDescending(x => x)];
+
             return Task.FromResult(intList);
         }
 
-        public async Task<string> Test(string name)
+
+    public async Task<string> Test(string name)
         {
             return string.IsNullOrEmpty(name) ? "Name is null or empty" : "Name is not null or empty";
         }
@@ -220,19 +222,19 @@ namespace WebApp.Controllers
         {
             Dictionary<string, string> classMap = new()
             {
-                { "Warrior", "brown"},
-                { "Hunter", "olive"},
-                { "Mage", "aqua"},
-                { "Rogue", "yellow"},
-                { "Priest", "white" },
-                { "Warlock", "purple" },
-                { "Paladin", "pink" },
-                { "Druid", "orange"},
-                { "Shaman", "blue" },
-                { "Monk", "green" },
-                { "Demon Hunter", "purple" },
-                { "Death Knight", "red" },
-                { "Evoker", "green" }
+                { "Warrior", "#C69B6D"},
+                { "Hunter", "#AAD372"},
+                { "Mage", "#3FC7EB"},
+                { "Rogue", "#FFF468"},
+                { "Priest", "#FFFFFF" },
+                { "Warlock", "#8788EE" },
+                { "Paladin", "#F48CBA" },
+                { "Druid", "#FF7C0A"},
+                { "Shaman", "#0070DD" },
+                { "Monk", "#00FF98" },
+                { "Demon Hunter", "#A330C9" },
+                { "Death Knight", "#C41E3A" },
+                { "Evoker", "#33937F" }
             };
             string color = classMap.TryGetValue(charModel.RaiderIOCharacterData.char_class, out string? value) ? value : "black";
 
