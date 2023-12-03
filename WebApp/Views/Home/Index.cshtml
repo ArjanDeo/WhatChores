@@ -1,23 +1,24 @@
 ﻿@using WebApp.Models
 @model OverviewModel
-<div class="real-based"></div>
-<h1>Hello!</h1>
-<h4>The WoW Token currently Costs @Model.WoWTokenData.price</h4>
-<div id="affix-container" style="text-align: left;">
-    <h4>This week's mythic plus affixes are:</h4>
-    @{
-        if (Model != null)
-        {
-            foreach (var affix in Model.AffixData.affix_details)
+
+<h1 class="text-center">Hello!</h1>
+<br />
+
+<div>
+    <h4 class="text-center">The WoW Token currently costs @Model.WoWTokenData.price gold.</h4>
+    <div class="affix-container">
+        @{
+            if (Model != null)
             {
-                <div class="affix-list">
-                    <strong>@affix.name</strong>
-                    <div class="affix-tooltip">
-                        <a href="@affix.wowhead_url" target="_blank"><img src="https://wow.zamimg.com/images/wow/icons/large/@(affix.icon).jpg" class="affix-icon" alt="@affix.name" /></a>
-                        
+                foreach (var affix in Model.AffixData.affix_details)
+                {
+                    <div class="affix-list">
+                        <a data-bs-toggle="tooltip" data-bs-title="@affix.name" href="@affix.wowhead_url" target="_blank">
+                            <img src="https://wow.zamimg.com/images/wow/icons/large/@(affix.icon).jpg" class="affix-icon" alt="@affix.name" />
+                        </a>
                     </div>
-                </div>
+                }
             }
         }
-    }
     </div>
+</div>
