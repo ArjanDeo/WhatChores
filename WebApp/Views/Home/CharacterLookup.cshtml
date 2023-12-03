@@ -8,20 +8,39 @@ if (Model != null)
     var raidData = Model.RaiderIOCharacterData.raid_progression.amirdrassilthedreamshope;
     var mythicPlusData = Model.RaiderIOCharacterData.mythic_plus_weekly_highest_level_runs;
     var top8Dungeons = Model.DungeonVaultSlots.Take(8).ToList();
-
+    int? normalBossesKilled = raidData.normal_bosses_killed;
+    int? heroicBossesKilled = raidData.heroic_bosses_killed;
+    int? mythicBossesKilled = raidData.mythic_bosses_killed;
   
     <div class="align-items-center">
-        <h1 style="color: @Model.classColor">Character: @characterData.name, @characterData.char_class </h1>
-        @if (raidData.summary != "0/9 N")
-        {
-            <h2>@raidData.normal_bosses_killed/9N - @raidData.heroic_bosses_killed/9H Amirdrassil, the Dreams Hope</h2>
-        }
-        else
-        {
-            <h2>You haven't run Amirdrassil at all!</h2>
-        }
+            <a href="@characterData.profile_url" target="_blank"><h1 style="color: @Model.classColor; display: inline-block;">Character: @characterData.name, @characterData.active_spec_name @characterData.char_class</h1> <img style="display: inline-block;" src="@characterData.thumbnail_url" /></a>
+            
+        @if (raidData.summary != "0/9 N") {
+            <h2>
+            @if (normalBossesKilled is not 0)
+            {
+                @normalBossesKilled <text>/9N -</text>
+            }
+
+            @if (heroicBossesKilled is not 0)
+            {
+                @heroicBossesKilled <text>/9H -</text>
+            }
+
+            @if (mythicBossesKilled is not 0)
+            {
+                @mythicBossesKilled <text>/9M -</text>
+            }
+                    Amirdrassil, the Dreams Hope
+                </h2>            
+            }
+            else
+            {
+                <h2>You haven't run Amirdrassil at all!</h2><br />
+            }           
+
     </div>
-        @if (mythicPlusData != null)
+        @if (mythicPlusData.Count != 0)
         {
             int dungeonsDisplayed = 0;
             <div>
@@ -101,18 +120,19 @@ if (Model != null)
 
             <div class="row height d-flex justify-content-center align-items-center">
 
-                <div class="col-md-8">
-
-                    <div class="search">
-                        <i class="fa fa-search"></i>
+                <div class="col-md-8">                                          
                         @using (Html.BeginForm("GetCharacter", "Home", FormMethod.Post))
                         {
-                            <input type="text" name="name" class="form-control" id="name" placeholder="Enter Character Name">
-                            <input type="text" name="realm" class="form-control" id="realm" placeholder="Enter Character Realm">
-                            <input type="submit" value="Find Character" />
-                        }
-                    </div>
-
+                            <div class="mb-3">
+                                <label for="characterName" class="form-label">Character Name</label>
+                                <input type="text" name="name" class="form-control" id="characterName" aria-describedby="characterName">                               
+                            </div>
+                            <div class="mb-3">
+                                <label for="characterRealm" class="form-label">Character Realm</label>
+                                <input type="text" name="realm" class="form-control" id="characterRealm">
+                            </div>                          
+                            <button type="submit" class="btn btn-primary">Find Character</button>
+                        }               
 
                 </div>
 
