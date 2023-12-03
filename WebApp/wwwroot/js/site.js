@@ -1,20 +1,25 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
-function getCharName() {
-    let charName = document.getElementById("nameField").innerHTML();
-    let x = "pp"
-    $.ajax({
-        url: '/Home/Test',
-        type: 'POST',
-        data: { name: x },
-        success: function (response) {
-            console.log(response); // Output the response in the console
-        },
-        error: function (xhr, status, error) {
-            // Handle errors
-            console.error(error);
-        }
-    });
+﻿const setTheme = (theme) => {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    localStorage.setItem("theme", theme);
 }
+
+document.getElementById('btnSwitch').addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+    const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+    setTheme(newTheme);
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme) {
+        setTheme(storedTheme);
+    } else {       
+        setTheme('dark');
+    }
+
+    
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach((tooltipTriggerEl) => {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});

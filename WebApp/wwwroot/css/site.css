@@ -20,12 +20,11 @@ html {
 body {
   margin-bottom: 60px;
 }
-#affix-container {
-    display: flex;
+.affix-container {
+    display: flex; /**/
     justify-content: center;
     align-items: center;
 }
-
 .affix-list {
     text-align: center;
     margin: 10px;
@@ -33,9 +32,14 @@ body {
 }
 
 .affix-icon {
-    width: 75px;
+    width: 60px;
     height: auto;
     cursor: pointer;
+    position: relative;
+    display: inline-block;
+}
+.affix-icon:hover {
+    border: 2px solid #808080;
 }
 .real-based {
     background-image: url(~/assets/images/dragonflight_alexstrasza.jpeg)

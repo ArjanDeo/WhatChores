@@ -1,19 +1,22 @@
+using LazyCache;
 using Microsoft.AspNetCore.Mvc;
 using Pathoschild.Http.Client;
-using System.Drawing;
+using System.Diagnostics;
+using System.Reflection;
 using WebApp.Models;
 
 namespace WebApp.Controllers
-{    
+{
     public class HomeController : Controller
     {
-        
+
         #region Object Declarations
         private readonly FluentClient client;
         private readonly CharacterLookupModel charModel;
         private readonly OverviewModel overviewModel;
-
+        private readonly IAppCache cache;
         private readonly IConfiguration _configuration;
+        private readonly Stopwatch stopwatch;
 
         readonly Dictionary<int, int> MythicKeystoneValues = [];
         readonly Dictionary<string, string> ApiPayload = [];
@@ -26,6 +29,8 @@ namespace WebApp.Controllers
         #region Constructor
         public HomeController(IConfiguration configuration)
         {
+            stopwatch = new();
+            cache = new CachingService();
             client = new();
             charModel = new();
             overviewModel = new();
@@ -72,94 +77,120 @@ namespace WebApp.Controllers
 
         public async Task<IActionResult> Index()
         {
+            
             if (AppConstants.AccessToken is null) { await PostAccessToken(); }
-
+            
+            
             RaiderIOMythicPlusAffixesModel affixData = await GetMythicPlusAffixes();
             WoWTokenPriceModel tokenData = await GetWoWToken();
 
             overviewModel.AffixData = affixData;
             overviewModel.WoWTokenData = tokenData;
-
             return View(overviewModel);
 
         }
 
-        public async Task<IActionResult> CharacterLookup()
-        {
-            // Malikéth
-            RaiderIOCharacterDataModel characterData = await GetCharacterData("FuryShiftz", "Tichondrius");
-
-            charModel.MythicKeystoneValues = MythicKeystoneValues;
-            charModel.RaiderIOCharacterData = characterData;
-
-            List<int> intList = await GetDungeonVaultSlots(characterData, charModel.MythicKeystoneValues);
-            charModel.DungeonVaultSlots = intList;
-            string color = await GetClassColor();
-
-            charModel.classColor = color;
-            return View(charModel);
+        public IActionResult CharacterLookup()
+        {          
+            return View();
         }
 
         #endregion
 
         #region API Requests (Get)
-        
+
         private async Task<WoWTokenPriceModel> GetWoWToken()
         {
-            IResponse ResponseData = await client
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            string cacheKey = $"GetWoWToken_{methodName}";
+
+            return await cache.GetOrAddAsync(cacheKey, async () =>
+            {
+                IResponse ResponseData = await client
                 .GetAsync("https://us.api.blizzard.com/data/wow/token/index")
                 .WithOptions(ignoreHttpErrors: true)
                 .WithArguments(ApiPayload)
                 .WithBearerAuthentication(AppConstants.AccessToken.access_token);
 
-            WoWTokenPriceModel ResponseDataModel = await ResponseData.As<WoWTokenPriceModel>();
+                WoWTokenPriceModel ResponseDataModel = await ResponseData.As<WoWTokenPriceModel>();
 
-            // The price of wow token is, for some reason, returned with unnecessary 0's at the end (e.g. 360541000)
-            // So here I divide it by 10000 to remove the last 3, then add comma separators for visibility.
-            // This will need to be changed in the extremely unlikely event that the token reaches prices of over 1 million or less than 100 thousand.
-            ResponseDataModel.price /= 10000;
+                // The price of wow token is, for some reason, returned with unnecessary 0's at the end (e.g. 360541000)
+                // So here I divide it by 10000 to remove the last 3, then add comma separators for visibility.
+                // This will need to be changed in the extremely unlikely event that the token reaches prices of over 1 million or less than 100 thousand.
+                ResponseDataModel.price /= 10000;
 
-            return ResponseDataModel;
-        }
-        
-        private async Task<RaiderIOCharacterDataModel> GetCharacterData(string name, string realm)
-        {
-            IResponse ResponseData = await client
-            .GetAsync("https://raider.io/api/v1/characters/profile")
-            .WithArgument("region", "us")
-            .WithArgument("name", name)
-            .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs")
-            .WithArgument("realm", realm);
-             
-            RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
-            return response;
-        }
-       
+                return ResponseDataModel;
+            }, TimeSpan.FromMinutes(5));
+            
+        }      
+      
         public async Task<RaiderIOMythicPlusAffixesModel> GetMythicPlusAffixes()
-        {
-            IResponse ResponseData = await client
+        {           
+            string cacheKey = $"MythicPlusAffixes";
+
+            return await cache.GetOrAddAsync(cacheKey, async () =>
+            {
+                IResponse ResponseData = await client
                 .GetAsync("https://raider.io/api/v1/mythic-plus/affixes")
                 .WithArgument("region", "us");
 
-            RaiderIOMythicPlusAffixesModel ResponseDataModel = await ResponseData.As<RaiderIOMythicPlusAffixesModel>();
-            return ResponseDataModel;
+                RaiderIOMythicPlusAffixesModel ResponseDataModel = await ResponseData.As<RaiderIOMythicPlusAffixesModel>();
+                return ResponseDataModel;
+
+            }, TimeSpan.FromMinutes(20));
+           
         }
+        
+        public async Task<IActionResult> GetCharacter(string name, string realm)
+        {
+            string cacheKey = $"GetCharacter_{name}_{realm}";
+
+            return await cache.GetOrAddAsync(cacheKey, async () =>
+            {
+                IResponse ResponseData = await client
+                    .GetAsync("https://raider.io/api/v1/characters/profile")
+                    .WithArgument("region", "us")
+                    .WithArgument("name", name)
+                    .WithArgument("realm", realm)
+                    .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs");
+
+                RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
+
+                charModel.MythicKeystoneValues = MythicKeystoneValues;
+                charModel.RaiderIOCharacterData = response;
+
+                List<int> intList = await GetDungeonVaultSlots(response, charModel.MythicKeystoneValues);
+                charModel.DungeonVaultSlots = intList;
+                string color = await GetClassColor();
+
+                charModel.classColor = color;
+
+                return View("CharacterLookup", charModel);
 
 
+            }, TimeSpan.FromMinutes(15));
+        }
+   
         #endregion
 
         #region API Requests (Post)
         
         public async Task<AccessTokenModel> PostAccessToken()
         {
-            IResponse Response = await client
-                .PostAsync("https://oauth.battle.net/oauth/token")
-                .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
-                .WithBasicAuthentication(clientId, clientSecret);
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            string cacheKey = $"MythicPlusAffixes_{methodName}";
+            return await cache.GetOrAddAsync(cacheKey, async () =>
+            {
+                IResponse Response = await client
+               .PostAsync("https://oauth.battle.net/oauth/token")
+               .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
+               .WithBasicAuthentication(clientId, clientSecret);
 
-            AccessTokenModel ResponseData = await Response.As<AccessTokenModel>();
-            AppConstants.AccessToken = ResponseData;
-            return ResponseData;
+                AccessTokenModel ResponseData = await Response.As<AccessTokenModel>();
+                AppConstants.AccessToken = ResponseData;
+                return ResponseData;
+            }, TimeSpan.FromMinutes(120));
+           
         }
 
         #endregion
