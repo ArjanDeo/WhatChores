@@ -1,4 +1,7 @@
-﻿namespace WebApp.Models
+﻿using Models.BattleNet.Public;
+using Models.RaiderIO.MythicPlus;
+
+namespace Models.WhatChores
 {
     public class OverviewModel
     {

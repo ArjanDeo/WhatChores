@@ -2,15 +2,14 @@
 @model CharacterLookupModel
 @{
 if (Model != null)
-{
-   
+{   
     var characterData = Model.RaiderIOCharacterData;
     var raidData = Model.RaiderIOCharacterData.raid_progression.amirdrassilthedreamshope;
     var mythicPlusData = Model.RaiderIOCharacterData.mythic_plus_weekly_highest_level_runs;
     var top8Dungeons = Model.DungeonVaultSlots.Take(8).ToList();
-    int? normalBossesKilled = raidData.normal_bosses_killed;
-    int? heroicBossesKilled = raidData.heroic_bosses_killed;
-    int? mythicBossesKilled = raidData.mythic_bosses_killed;
+    int normalBossesKilled = raidData.normal_bosses_killed;
+    int heroicBossesKilled = raidData.heroic_bosses_killed;
+    int mythicBossesKilled = raidData.mythic_bosses_killed;
   
     <div class="align-items-center">
             <a href="@characterData.profile_url" target="_blank"><h1 style="color: @Model.classColor; display: inline-block;">Character: @characterData.name, @characterData.active_spec_name @characterData.char_class</h1> <img style="display: inline-block;" src="@characterData.thumbnail_url" /></a>
@@ -112,17 +111,18 @@ if (Model != null)
             <h2>No Mythic+ done this week!</h2>
         }
         </div>
-    }  else
+    } else if (ViewBag.Error != null)
+    {        
+        @ViewBag.Error;
+        <a class="btn btn-primary" href="CharacterLookup">Try Again</a>
+    }
+    else
     {
 
-
         <div class="container">
-
             <div class="row height d-flex justify-content-center align-items-center">
-
                 <div class="col-md-8">                                          
-                        @using (Html.BeginForm("GetCharacter", "Home", FormMethod.Post))
-                        {
+                            <form method="post" action="/Home/GetCharacter">
                             <div class="mb-3">
                                 <label for="characterName" class="form-label">Character Name</label>
                                 <input type="text" name="name" class="form-control" id="characterName" aria-describedby="characterName">                               
@@ -132,10 +132,8 @@ if (Model != null)
                                 <input type="text" name="realm" class="form-control" id="characterRealm">
                             </div>                          
                             <button type="submit" class="btn btn-primary">Find Character</button>
-                        }               
-
+                        </form>
                 </div>
-
             </div>
         </div>
 

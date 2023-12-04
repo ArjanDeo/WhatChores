@@ -1,4 +1,4 @@
-﻿namespace WebApp.Models
+﻿namespace Models.BattleNet.Public
 {
     public class Links
     {

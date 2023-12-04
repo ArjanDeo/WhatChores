@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace WebApp.Models
+namespace Models.RaiderIO.Character
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);

@@ -1,4 +1,4 @@
-﻿namespace WebApp.Models
+﻿namespace Models.RaiderIO.MythicPlus
 {
     public class AffixDetail
     {

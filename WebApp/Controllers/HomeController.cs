@@ -1,9 +1,13 @@
 using LazyCache;
 using Microsoft.AspNetCore.Mvc;
+using Models.BattleNet.OAuth;
+using Models.BattleNet.Public;
+using Models.Constants;
+using Models.RaiderIO.Character;
+using Models.RaiderIO.MythicPlus;
+using Models.WhatChores;
 using Pathoschild.Http.Client;
 using System.Diagnostics;
-using System.Reflection;
-using WebApp.Models;
 
 namespace WebApp.Controllers
 {
@@ -141,27 +145,34 @@ namespace WebApp.Controllers
 
             return await cache.GetOrAddAsync(cacheKey, async () =>
             {
-                IResponse ResponseData = await client
-                    .GetAsync("https://raider.io/api/v1/characters/profile")
-                    .WithArgument("region", "us")
-                    .WithArgument("name", name)
-                    .WithArgument("realm", realm)
-                    .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs");
-
-                RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
-
-                charModel.MythicKeystoneValues = MythicKeystoneValues;
-                charModel.RaiderIOCharacterData = response;
-
-                List<int> intList = await GetDungeonVaultSlots(response, charModel.MythicKeystoneValues);
-                charModel.DungeonVaultSlots = intList;
-                string color = await GetClassColor();
-
-                charModel.classColor = color;
-
-                return View("CharacterLookup", charModel);
+                try
+                {
+                    IResponse ResponseData = await client
+                        .GetAsync("https://raider.io/api/v1/characters/profile")
+                        .WithArgument("region", "us")
+                        .WithArgument("name", name)
+                        .WithArgument("realm", realm)
+                        .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs");
 
 
+                    RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
+
+                    charModel.MythicKeystoneValues = MythicKeystoneValues;
+                    charModel.RaiderIOCharacterData = response;
+
+                    List<int> intList = await GetDungeonVaultSlots(response, charModel.MythicKeystoneValues);
+                    charModel.DungeonVaultSlots = intList;
+                    string color = await GetClassColor();
+
+                    charModel.classColor = color;
+
+                    return View("CharacterLookup", charModel);
+                }
+                catch
+                {
+                    ViewBag.Error = "Incorrect character name or realm.";
+                    return View("CharacterLookup");
+                }
             }, TimeSpan.FromMinutes(15));
         }
    

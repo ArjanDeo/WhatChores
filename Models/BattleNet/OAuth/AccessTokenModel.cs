@@ -1,4 +1,4 @@
-﻿namespace WebApp.Models
+﻿namespace Models.BattleNet.OAuth
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
     public class AccessTokenModel

@@ -1,4 +1,6 @@
-﻿namespace WebApp.Models
+﻿using Models.BattleNet.OAuth;
+
+namespace Models.Constants
 {
     public static class AppConstants
     {

@@ -1,4 +1,6 @@
-﻿namespace WebApp.Models
+﻿using Models.RaiderIO.Character;
+
+namespace Models.WhatChores
 {
     public class CharacterLookupModel
     {
