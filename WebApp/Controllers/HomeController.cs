@@ -1,5 +1,9 @@
+using DataAccess;
+using IdentityModel.Client;
 using LazyCache;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Models.BattleNet.OAuth;
 using Models.BattleNet.Public;
 using Models.Constants;
@@ -17,23 +21,23 @@ namespace WebApp.Controllers
         #region Object Declarations
         private readonly FluentClient client;
         private readonly CharacterLookupModel charModel;
-        private readonly OverviewModel overviewModel;
+        private readonly OverviewModel overviewModel; 
         private readonly IAppCache cache;
         private readonly IConfiguration _configuration;
-        private readonly Stopwatch stopwatch;
 
         readonly Dictionary<int, int> MythicKeystoneValues = [];
         readonly Dictionary<string, string> ApiPayload = [];
         readonly Dictionary<string, string> AccessTokenPayload = [];
-
         private readonly string? clientId;
         private readonly string? clientSecret;
+
+        private readonly WhatChoresDbContext _context;
         #endregion
 
         #region Constructor
-        public HomeController(IConfiguration configuration)
+        public HomeController(IConfiguration configuration, WhatChoresDbContext context)
         {
-            stopwatch = new();
+            _context = context;
             cache = new CachingService();
             client = new();
             charModel = new();
@@ -94,8 +98,10 @@ namespace WebApp.Controllers
         }
 
         public IActionResult CharacterLookup()
-        {          
-            return View();
+        {
+           var realms = (from RealmName in _context.tbl_USRealms select RealmName).ToList();
+            charModel.RealmNames = realms;
+            return View(charModel);
         }
 
         #endregion
@@ -147,6 +153,7 @@ namespace WebApp.Controllers
             {
                 try
                 {
+                    name.Replace(" ", "-");
                     IResponse ResponseData = await client
                         .GetAsync("https://raider.io/api/v1/characters/profile")
                         .WithArgument("region", "us")
@@ -160,7 +167,7 @@ namespace WebApp.Controllers
                     charModel.MythicKeystoneValues = MythicKeystoneValues;
                     charModel.RaiderIOCharacterData = response;
 
-                    List<int> intList = await GetDungeonVaultSlots(response, charModel.MythicKeystoneValues);
+                    List<int> intList = await GetDungeonVaultSlots(response, charModel.MythicKeystoneValues);                                
                     charModel.DungeonVaultSlots = intList;
                     string color = await GetClassColor();
 
@@ -170,8 +177,9 @@ namespace WebApp.Controllers
                 }
                 catch
                 {
-                    ViewBag.Error = "Incorrect character name or realm.";
-                    return View("CharacterLookup");
+                    charModel.FailedToGetCharacter = true;
+                    ViewBag.Data = "err.sys/8ug8ear"; 
+                    return View("CharacterLookup", charModel);
                 }
             }, TimeSpan.FromMinutes(15));
         }
@@ -180,6 +188,8 @@ namespace WebApp.Controllers
 
         #region API Requests (Post)
         
+
+      
         public async Task<AccessTokenModel> PostAccessToken()
         {           
             string cacheKey = $"PostAccessToken";
@@ -253,8 +263,8 @@ namespace WebApp.Controllers
         }
         #endregion
 
-        #region Privacy Page
-        public IActionResult Privacy()
+        #region API Page
+        public IActionResult API()
         {
             return View();
         }

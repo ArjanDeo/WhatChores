@@ -1,7 +1,7 @@
-﻿@using WebApp.Models
+﻿@using Models.WhatChores
 @model CharacterLookupModel
 @{
-if (Model != null)
+if (Model != null && Model.RaiderIOCharacterData is not null)
 {   
     var characterData = Model.RaiderIOCharacterData;
     var raidData = Model.RaiderIOCharacterData.raid_progression.amirdrassilthedreamshope;
@@ -88,35 +88,38 @@ if (Model != null)
                     }
                 }
             </ul>
-
+            }
            
-   <h3>
-    @if (mythicPlusData.Count < 4)
+   <h3>                  
+    @if (mythicPlusData.Count < 4 && mythicPlusData.Count != 0)
     {
-        <text>You need to complete </text>@(4 - mythicPlusData.Count) @(" more dungeons" + (4 - mythicPlusData.Count == 1 ? "" : "s") + " to unlock your next slot.")
+        <text>You need to complete </text>@(4 - mythicPlusData.Count) @(" more dungeons" + (4 - mythicPlusData.Count == 1 ? "" : "") + " to unlock your next slot.")
     }
-    else if (mythicPlusData.Count < 8)
+                else if (mythicPlusData.Count < 8 && mythicPlusData.Count != 0)
     {
-        <text>You need to complete </text> @(8 - mythicPlusData.Count) @(" more dungeons" + (8 - mythicPlusData.Count == 1 ? "" : "s") + " to unlock your next slot.")
+        <text>You need to complete </text> @(8 - mythicPlusData.Count) @(" more dungeons" + (8 - mythicPlusData.Count == 1 ? "" : "") + " to unlock your next slot.")
     }
-    else
+    else if (mythicPlusData.Count > 8)
     {
-        <text>You've unlocked all M+ slots!</text>
+       <text>You've unlocked all M+ slots!</text>
+    } else
+    {
+        <text>No M+ done this week!</text>
     }
     </h3>
 
-        }
-        else
-        {
-            <h2>No Mythic+ done this week!</h2>
-        }
-        </div>
-    } else if (ViewBag.Error != null)
-    {        
-        @ViewBag.Error;
+  
+   
+    </div>
+}
+
+    else if (Model != null && Model.FailedToGetCharacter is true)
+    {
+        <p>Couldn't find your character!</p><br/>
+        <p>Make sure that you entered the correct name/realm combination and that your character has been scanned by <a href="https://raider.io" target="_blank">raider.io</a></p>
         <a class="btn btn-primary" href="CharacterLookup">Try Again</a>
     }
-    else
+    else if (Model != null && Model.RealmNames.Any())
     {
 
         <div class="container">
@@ -128,14 +131,22 @@ if (Model != null)
                                 <input type="text" name="name" class="form-control" id="characterName" aria-describedby="characterName">                               
                             </div>
                             <div class="mb-3">
-                                <label for="characterRealm" class="form-label">Character Realm</label>
-                                <input type="text" name="realm" class="form-control" id="characterRealm">
+                             <label for="realmDataList" class="form-label">Realm</label>
+                            <input name="realm" class="form-control" list="datalistOptions" id="realmDataList" placeholder="Type to search...">
+                            <datalist id="datalistOptions">
+                                @foreach (var realm in Model.RealmNames)
+                                {
+                                    <option value="@realm.RealmName" />
+                                }                            
+                            </datalist>
                             </div>                          
                             <button type="submit" class="btn btn-primary">Find Character</button>
                         </form>
                 </div>
             </div>
         </div>
-
+    } else
+    {
+        <p>Realms List Broken.</p>
     }
 }
