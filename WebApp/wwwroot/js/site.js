@@ -3,7 +3,7 @@
     localStorage.setItem("theme", theme);
 }
 
-document.getElementById('btnSwitch').addEventListener('click', () => {
+document.getElementById('toggleThemeBtn').addEventListener('click', () => {
     const currentTheme = document.documentElement.getAttribute('data-bs-theme');
     const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
     setTheme(newTheme);
