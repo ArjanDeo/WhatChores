@@ -1,7 +1,10 @@
 ﻿@using Models.WhatChores
 @model CharacterLookupModel
-@{
-if (Model != null && Model.RaiderIOCharacterData is not null)
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-md-10 col-sm-12 mx-auto">
+@if (Model.RaiderIOCharacterData is not null)
 {   
     var characterData = Model.RaiderIOCharacterData;
     var raidData = Model.RaiderIOCharacterData.raid_progression.amirdrassilthedreamshope;
@@ -12,8 +15,15 @@ if (Model != null && Model.RaiderIOCharacterData is not null)
     int mythicBossesKilled = raidData.mythic_bosses_killed;
   
     <div class="align-items-center">
-            <a href="@characterData.profile_url" target="_blank"><h1 style="color: @Model.classColor; display: inline-block;">Character: @characterData.name, @characterData.active_spec_name @characterData.char_class</h1> <img style="display: inline-block;" src="@characterData.thumbnail_url" /></a>
-            
+                    <a style="color: @Model.classColor; text-decoration: none;" href="https://worldofwarcraft.blizzard.com/en-us/character/us/@characterData.realm/@characterData.name" target="_blank">
+                        <h1 class="d-inline-flex">Character: @characterData.name</h1>
+                        @if (characterData.guild is not null)
+                        {
+                            <h1 class="d-inline-flex ml-md-2 ml-sm-0">&lt;@characterData.guild.name&gt;</h1>
+                        }
+                        <h1 class="d-inline-flex ml-md-2 ml-sm-0">@characterData.active_spec_name @characterData.char_class</h1>
+                        <img style="display: inline-block; margin-left: 10px" src="@characterData.thumbnail_url" />
+                    </a>
         @if (raidData.summary != "0/9 N") {
             <h2>
             @if (normalBossesKilled is not 0)
@@ -113,40 +123,36 @@ if (Model != null && Model.RaiderIOCharacterData is not null)
     </div>
 }
 
-    else if (Model != null && Model.FailedToGetCharacter is true)
+    else if (Model != null && Model.FailedToGetCharacter)
     {
-        <p>Couldn't find your character!</p><br/>
+        <p>Couldn't find your character!</p>
         <p>Make sure that you entered the correct name/realm combination and that your character has been scanned by <a href="https://raider.io" target="_blank">raider.io</a></p>
         <a class="btn btn-primary" href="CharacterLookup">Try Again</a>
     }
     else if (Model != null && Model.RealmNames.Any())
     {
-
-        <div class="container">
-            <div class="row height d-flex justify-content-center align-items-center">
-                <div class="col-md-8">                                          
-                            <form method="post" action="/Home/GetCharacter">
-                            <div class="mb-3">
-                                <label for="characterName" class="form-label">Character Name</label>
-                                <input type="text" name="name" class="form-control" id="characterName" aria-describedby="characterName">                               
-                            </div>
-                            <div class="mb-3">
-                             <label for="realmDataList" class="form-label">Realm</label>
-                            <input name="realm" class="form-control" list="datalistOptions" id="realmDataList" placeholder="Type to search...">
-                            <datalist id="datalistOptions">
-                                @foreach (var realm in Model.RealmNames)
-                                {
-                                    <option value="@realm.RealmName" />
-                                }                            
-                            </datalist>
-                            </div>                          
-                            <button type="submit" class="btn btn-primary">Find Character</button>
-                        </form>
-                </div>
-            </div>
-        </div>
+                <form method="post" action="/Home/GetCharacter">
+                    <div class="mb-3">
+                        <label for="characterName" class="form-label">Character Name</label>
+                        <input type="text" name="name" class="form-control" id="characterName" aria-describedby="characterName">
+                    </div>
+                    <div class="mb-3">
+                        <label for="realmDataList" class="form-label">Realm</label>
+                        <input name="realm" class="form-control" list="datalistOptions" id="realmDataList" placeholder="Type to search...">
+                        <datalist id="datalistOptions">
+                            @foreach (var realm in Model.RealmNames)
+                            {
+                                <option value="@realm.RealmName" />
+                            }
+                        </datalist>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Find Character</button>
+                </form>
     } else
     {
-        <p>Realms List Broken.</p>
-    }
-}
+        <p>An Error Ocurred, please submit a ticket on the github repository with information on how you reached this page.</p>
+    }           
+
+        </div>
+    </div>
+</div>

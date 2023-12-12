@@ -1,9 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿// Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+using Newtonsoft.Json;
 
 namespace Models.RaiderIO.Character
 {
-    // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
-    // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
     public class AberrusTheShadowedCrucible
     {
         public string summary { get; set; }
@@ -29,6 +28,12 @@ namespace Models.RaiderIO.Character
         public int normal_bosses_killed { get; set; }
         public int heroic_bosses_killed { get; set; }
         public int mythic_bosses_killed { get; set; }
+    }
+
+    public class Guild
+    {
+        public string name { get; set; }
+        public string realm { get; set; }
     }
 
     public class MythicPlusWeeklyHighestLevelRun
@@ -64,7 +69,6 @@ namespace Models.RaiderIO.Character
         public string name { get; set; }
         public string race { get; set; }
         [JsonProperty("class")]
-
         public string char_class { get; set; }
         public string active_spec_name { get; set; }
         public string active_spec_role { get; set; }
@@ -80,6 +84,7 @@ namespace Models.RaiderIO.Character
         public string profile_banner { get; set; }
         public List<MythicPlusWeeklyHighestLevelRun> mythic_plus_weekly_highest_level_runs { get; set; }
         public RaidProgression raid_progression { get; set; }
+        public Guild guild { get; set; }
     }
 
     public class VaultOfTheIncarnates
@@ -90,8 +95,5 @@ namespace Models.RaiderIO.Character
         public int heroic_bosses_killed { get; set; }
         public int mythic_bosses_killed { get; set; }
     }
-
-
-
 
 }

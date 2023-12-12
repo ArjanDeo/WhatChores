@@ -12,6 +12,10 @@ namespace DataAccess
 
         #region Tables
         public DbSet<tbl_USRealms> tbl_USRealms { get; set; }
+        public DbSet<tbl_MythicPlusValues> tbl_MythicPlusValues { get; set; }
+        public DbSet<tbl_ClassData> tbl_ClassData { get; set; }
+
+
         #endregion
     }
 }

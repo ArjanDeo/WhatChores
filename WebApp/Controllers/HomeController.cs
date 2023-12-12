@@ -25,7 +25,6 @@ namespace WebApp.Controllers
         private readonly IAppCache cache;
         private readonly IConfiguration _configuration;
 
-        readonly Dictionary<int, int> MythicKeystoneValues = [];
         readonly Dictionary<string, string> ApiPayload = [];
         readonly Dictionary<string, string> AccessTokenPayload = [];
         private readonly string? clientId;
@@ -43,28 +42,6 @@ namespace WebApp.Controllers
             charModel = new();
             overviewModel = new();
             _configuration = configuration;
-            MythicKeystoneValues = new()
-            {
-            { 2, 454 },
-            { 3, 457 },
-            { 4, 460 },
-            { 5, 460 },
-            { 6, 463 },
-            { 7, 463 },
-            { 8, 467 },
-            { 9, 467 },
-            { 10, 470 },
-            { 11, 470 },
-            { 12, 473 },
-            { 13, 473 },
-            { 14, 473 },
-            { 15, 476 },
-            { 16, 476 },
-            { 17, 476 },
-            { 18, 480 },
-            { 19, 480 },
-            { 20, 483 }
-        };
             ApiPayload = new()
             {
                 ["region"] = "us",
@@ -151,20 +128,19 @@ namespace WebApp.Controllers
 
             return await cache.GetOrAddAsync(cacheKey, async () =>
             {
-                try
+                try 
                 {
-                    name.Replace(" ", "-");
                     IResponse ResponseData = await client
                         .GetAsync("https://raider.io/api/v1/characters/profile")
                         .WithArgument("region", "us")
-                        .WithArgument("name", name)
+                        .WithArgument("name", name.Replace(" ", "-"))
                         .WithArgument("realm", realm)
-                        .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs");
+                        .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,guild");
 
 
                     RaiderIOCharacterDataModel response = await ResponseData.As<RaiderIOCharacterDataModel>();
 
-                    charModel.MythicKeystoneValues = MythicKeystoneValues;
+                    charModel.MythicKeystoneValues = await _context.tbl_MythicPlusValues.ToDictionaryAsync(i => i.KeyLevel, i => i.ItemLevel); 
                     charModel.RaiderIOCharacterData = response;
 
                     List<int> intList = await GetDungeonVaultSlots(response, charModel.MythicKeystoneValues);                                
@@ -178,7 +154,6 @@ namespace WebApp.Controllers
                 catch
                 {
                     charModel.FailedToGetCharacter = true;
-                    ViewBag.Data = "err.sys/8ug8ear"; 
                     return View("CharacterLookup", charModel);
                 }
             }, TimeSpan.FromMinutes(15));
@@ -239,32 +214,18 @@ namespace WebApp.Controllers
             return string.IsNullOrEmpty(name) ? "Name is null or empty" : "Name is not null or empty";
         }
 
-        private Task<string> GetClassColor()
+        private async Task<string> GetClassColor()
         {
-            Dictionary<string, string> classMap = new()
-            {
-                { "Warrior", "#C69B6D"},
-                { "Hunter", "#AAD372"},
-                { "Mage", "#3FC7EB"},
-                { "Rogue", "#FFF468"},
-                { "Priest", "#FFFFFF" },
-                { "Warlock", "#8788EE" },
-                { "Paladin", "#F48CBA" },
-                { "Druid", "#FF7C0A"},
-                { "Shaman", "#0070DD" },
-                { "Monk", "#00FF98" },
-                { "Demon Hunter", "#A330C9" },
-                { "Death Knight", "#C41E3A" },
-                { "Evoker", "#33937F" }
-            };
+            Dictionary<string, string> classMap = await _context.tbl_ClassData.ToDictionaryAsync(i => i.ClassName, i => i.ClassColor);
+
             string color = classMap.TryGetValue(charModel.RaiderIOCharacterData.char_class, out string? value) ? value : "black";
 
-            return Task.FromResult(color);
+            return color;
         }
         #endregion
 
         #region API Page
-        public IActionResult API()
+        public IActionResult Api()
         {
             return View();
         }
