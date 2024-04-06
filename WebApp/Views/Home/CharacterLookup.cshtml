@@ -20,11 +20,13 @@
                         @if (characterData.guild is not null)
                         {
                             <h1 class="d-inline-flex ml-md-2 ml-sm-0">&lt;@characterData.guild.name&gt;</h1>
+                            <br />
                         }
                         <h1 class="d-inline-flex ml-md-2 ml-sm-0">@characterData.active_spec_name @characterData.char_class</h1>
+                        <br />
                         <img style="display: inline-block; margin-left: 10px" src="@characterData.thumbnail_url" />
                     </a>
-        @if (raidData.summary != "0/9 N") {
+        @if (raidData.summary is not "0/9 N") {
             <h2>
             @if (normalBossesKilled is not 0)
             {
