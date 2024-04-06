@@ -11,7 +11,8 @@
 *.sln.docstates
 appsettings.json
 appsettings.Development.json
-
+tailwindcss-windows-x64.exe
+token.txt
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

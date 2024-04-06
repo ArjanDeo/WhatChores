@@ -1,7 +1,6 @@
 using DataAccess;
 using IdentityModel.Client;
 using LazyCache;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models.BattleNet.OAuth;
@@ -11,7 +10,6 @@ using Models.RaiderIO.Character;
 using Models.RaiderIO.MythicPlus;
 using Models.WhatChores;
 using Pathoschild.Http.Client;
-using System.Diagnostics;
 
 namespace WebApp.Controllers
 {
@@ -25,8 +23,8 @@ namespace WebApp.Controllers
         private readonly IAppCache cache;
         private readonly IConfiguration _configuration;
 
-        readonly Dictionary<string, string> ApiPayload = [];
-        readonly Dictionary<string, string> AccessTokenPayload = [];
+        private readonly Dictionary<string, string> ApiPayload = [];
+        private readonly Dictionary<string, string> AccessTokenPayload = [];
         private readonly string? clientId;
         private readonly string? clientSecret;
 
@@ -103,7 +101,7 @@ namespace WebApp.Controllers
                 ResponseDataModel.price /= 10000;
 
                 return ResponseDataModel;
-            }, TimeSpan.FromMinutes(5));
+            }, TimeSpan.FromMinutes(60));
             
         }      
       
@@ -118,7 +116,7 @@ namespace WebApp.Controllers
                 RaiderIOMythicPlusAffixesModel ResponseDataModel = await ResponseData.As<RaiderIOMythicPlusAffixesModel>();
                 return ResponseDataModel;
 
-            }, TimeSpan.FromMinutes(20));
+            }, TimeSpan.FromMinutes(60));
            
         }
         
@@ -133,8 +131,8 @@ namespace WebApp.Controllers
                     IResponse ResponseData = await client
                         .GetAsync("https://raider.io/api/v1/characters/profile")
                         .WithArgument("region", "us")
-                        .WithArgument("name", name.Replace(" ", "-"))
-                        .WithArgument("realm", realm)
+                        .WithArgument("name", name)
+                        .WithArgument("realm", realm.Replace(" ", "-"))
                         .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,guild");
 
 
@@ -186,7 +184,7 @@ namespace WebApp.Controllers
 
         #region Functions
 
-        private Task<List<int>> GetDungeonVaultSlots(RaiderIOCharacterDataModel characterData, Dictionary<int, int> mythicKeystoneValues)
+        private static Task<List<int>> GetDungeonVaultSlots(RaiderIOCharacterDataModel characterData, Dictionary<int, int> mythicKeystoneValues)
         {
             List<int> intList = [];
 
