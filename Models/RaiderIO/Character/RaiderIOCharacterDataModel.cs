@@ -1,9 +1,7 @@
 ﻿using Newtonsoft.Json;
 
 namespace Models.RaiderIO.Character
-{
-
-    // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+{    
     public class AberrusTheShadowedCrucible
     {
         public string summary { get; set; }
@@ -20,12 +18,6 @@ namespace Models.RaiderIO.Character
         public string description { get; set; }
         public string icon { get; set; }
         public string wowhead_url { get; set; }
-    }
-
-    public class All
-    {
-        public double score { get; set; }
-        public string color { get; set; }
     }
 
     public class AmirdrassilTheDreamsHope
@@ -48,7 +40,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -65,7 +56,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -88,17 +78,10 @@ namespace Models.RaiderIO.Character
         public List<object> spells { get; set; }
     }
 
-    public class Dps
-    {
-        public double score { get; set; }
-        public string color { get; set; }
-    }
-
     public class Feet
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -115,7 +98,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -132,7 +114,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -148,8 +129,7 @@ namespace Models.RaiderIO.Character
     public class Gear
     {
         public DateTime updated_at { get; set; }
-        public int item_level_equipped { get; set; }
-        public int item_level_total { get; set; }
+        public double item_level_equipped { get; set; }
         public int artifact_traits { get; set; }
         public Corruption corruption { get; set; }
         public Items items { get; set; }
@@ -182,7 +162,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -193,12 +172,6 @@ namespace Models.RaiderIO.Character
         public List<object> domination_shards { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
-    }
-
-    public class Healer
-    {
-        public int score { get; set; }
-        public string color { get; set; }
     }
 
     public class Items
@@ -225,7 +198,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -243,7 +215,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -254,13 +225,6 @@ namespace Models.RaiderIO.Character
         public List<object> domination_shards { get; set; }
         public List<object> gems { get; set; }
         public List<int> bonuses { get; set; }
-    }
-
-    public class MythicPlusScoresBySeason
-    {
-        public string season { get; set; }
-        public Scores scores { get; set; }
-        public Segments segments { get; set; }
     }
 
     public class MythicPlusWeeklyHighestLevelRun
@@ -299,7 +263,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -329,7 +292,7 @@ namespace Models.RaiderIO.Character
         public string name { get; set; }
         public string race { get; set; }
         [JsonProperty("class")]
-        public string char_class { get; set; }
+        public string char_class { get; set; } // reserved keyword 'class' manually changed to char class
         public string active_spec_name { get; set; }
         public string active_spec_role { get; set; }
         public string gender { get; set; }
@@ -342,35 +305,10 @@ namespace Models.RaiderIO.Character
         public DateTime last_crawled_at { get; set; }
         public string profile_url { get; set; }
         public string profile_banner { get; set; }
-        public List<MythicPlusScoresBySeason> mythic_plus_scores_by_season { get; set; }
         public List<MythicPlusWeeklyHighestLevelRun> mythic_plus_weekly_highest_level_runs { get; set; }
         public Gear gear { get; set; }
         public RaidProgression raid_progression { get; set; }
         public Guild guild { get; set; }
-    }
-
-    public class Scores
-    {
-        public double all { get; set; }
-        public double dps { get; set; }
-        public int healer { get; set; }
-        public int tank { get; set; }
-        public int spec_0 { get; set; }
-        public double spec_1 { get; set; }
-        public double spec_2 { get; set; }
-        public int spec_3 { get; set; }
-    }
-
-    public class Segments
-    {
-        public All all { get; set; }
-        public Dps dps { get; set; }
-        public Healer healer { get; set; }
-        public Tank tank { get; set; }
-        public Spec0 spec_0 { get; set; }
-        public Spec1 spec_1 { get; set; }
-        public Spec2 spec_2 { get; set; }
-        public Spec3 spec_3 { get; set; }
     }
 
     public class Shoulder
@@ -390,30 +328,6 @@ namespace Models.RaiderIO.Character
         public List<int> bonuses { get; set; }
     }
 
-    public class Spec0
-    {
-        public int score { get; set; }
-        public string color { get; set; }
-    }
-
-    public class Spec1
-    {
-        public double score { get; set; }
-        public string color { get; set; }
-    }
-
-    public class Spec2
-    {
-        public double score { get; set; }
-        public string color { get; set; }
-    }
-
-    public class Spec3
-    {
-        public int score { get; set; }
-        public string color { get; set; }
-    }
-
     public class Spell
     {
         public int id { get; set; }
@@ -421,12 +335,6 @@ namespace Models.RaiderIO.Character
         public string icon { get; set; }
         public string name { get; set; }
         public object rank { get; set; }
-    }
-
-    public class Tank
-    {
-        public int score { get; set; }
-        public string color { get; set; }
     }
 
     public class Trinket1
@@ -474,7 +382,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -491,7 +398,6 @@ namespace Models.RaiderIO.Character
     {
         public int item_id { get; set; }
         public int item_level { get; set; }
-        public int enchant { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
         public int item_quality { get; set; }
@@ -503,10 +409,6 @@ namespace Models.RaiderIO.Character
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
-
-
-
-
 
 
 

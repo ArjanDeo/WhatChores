@@ -1,8 +1,7 @@
 using DataAccess;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
+using Pathoschild.Http.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,30 +12,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    if (builder.Environment.IsDevelopment())
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
-        options.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Version = "v1",
-            Title = "What Chores? API",
-            Description = "An API to get information about World of Warcraft\n\n[ base uri: https://localhost:7031/ ]\n\nThis was created for my website, <a href=\"https://localhost:44368\">What Chores</a>.",
-        });
-    } else
-    {
-        options.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Version = "v1",
-            Title = "What Chores? API",
-            Description = "An API to get information about World of Warcraft\n\n[ base uri: https://api.whatchores.furyshiftz.com/ ]\n\nThis was created for my website, <a href=\"https://whatchores.furyshiftz.com/\">What Chores</a>.",
-        });
-    }
-    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+        Version = "v1",
+        Title = "What Chores? API",
+        Description = "An API to get information about World of Warcraft\n\nThe base uri is https://localhost:7031/\n\nThe data is from my web app, <a href=\"https://localhost:44368\">What Chores</a>.",       
+    });
 });
 
 builder.Services.AddDbContext<WhatChoresDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConn")));
-
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+//builder.Services.AddSingleton<FluentClient>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -49,11 +35,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseCors();
 
 app.Run();

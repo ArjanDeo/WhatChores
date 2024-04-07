@@ -2,13 +2,11 @@
 using DataAccess.Tables;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Models.WhatChores.API;
 
 namespace API.Controllers
 {
     [Route("api/v1/mythicplus")]
     [ApiController]
-    [Produces("application/json")]
     public class MythicPlusController : ControllerBase
     {
         private readonly WhatChoresDbContext _context;
@@ -17,56 +15,55 @@ namespace API.Controllers
         {
             _context = context;
         }
-        /// <summary>
-        /// Gets the vault reward ilvl for a specific M+ key level.
-        /// </summary>
-        /// <param name="keyLevel"></param>
-        /// <response code="200">Returns the vault reward ilvl for provided key level (all key levels shown if none specified)</response>
-        /// <response code="400">If an invalid key level was entered. (NaN or below 2)</response>
-        /// <response code="404">If the key level wasn't found</response>
+
         [HttpGet("keystone-vault-reward")]
-        [ProducesResponseType(typeof(tbl_MythicPlusValues), 200)]
-        [ProducesResponseType(typeof(Error), 400)]
-        [ProducesResponseType(typeof(Error), 404)]
-        public async Task<ActionResult<List<tbl_MythicPlusValues>>> Get(int? keyLevel)
+        public async Task<ActionResult<object>> Get(int? keyLevel)
         {
-            IQueryable<tbl_MythicPlusValues> query = _context.tbl_MythicPlusValues;
-
-            // if keyLevel is NaN or less than 2
-            if (keyLevel.HasValue && (keyLevel < 2))
+            // Check for keyLevel less than 2
+            if (keyLevel.HasValue && keyLevel < 2)
             {
-                Error error = new()
+                return BadRequest("Key level should be between 2 and 20.");
+            }
+
+            int originalKeyLevel = keyLevel.GetValueOrDefault(); // Store the original input keyLevel
+
+            // Adjust keyLevel if it's greater than 20
+            if (keyLevel.HasValue && keyLevel > 20)
+            {
+                keyLevel = 20;
+            }
+
+            if (!keyLevel.HasValue)
+            {
+                // Return all key levels if keyLevel is null
+                var allRewards = await _context.tbl_MythicPlusValues
+                    .OrderBy(k => k.KeyLevel) // Assuming you want them ordered
+                    .ToDictionaryAsync(k => k.KeyLevel.ToString(), i => i.ItemLevel.ToString());
+
+                return Ok(allRewards);
+            }
+            else
+            {
+                // Query for the specific or adjusted key level
+                var reward = await _context.tbl_MythicPlusValues
+                    .Where(k => k.KeyLevel == keyLevel)
+                    .Select(k => new { Key = k.KeyLevel.ToString(), Value = k.ItemLevel.ToString() })
+                    .FirstOrDefaultAsync();
+
+                if (reward == null)
                 {
-                    ErrorCode = 400,
-                    ErrorMessage = "Key level must be 2 or higher."
-                };
-                return BadRequest(error);
+                    return NotFound($"No rewards found for key level {originalKeyLevel}.");
+                }
+
+                // Return in the specified format
+                var result = new Dictionary<string, string>
+        {
+            // Use originalKeyLevel in the response if it was greater than 20
+            { originalKeyLevel > 20 ? originalKeyLevel.ToString() : reward.Key, reward.Value }
+        };
+
+                return Ok(result);
             }
-
-            if (keyLevel.HasValue && keyLevel < 20)
-            {
-                query = query.Where(k => k.KeyLevel == keyLevel.Value);
-                var data = await query.FirstOrDefaultAsync();
-                return Ok(new { keyLevel, itemLevel = data.ItemLevel });
-
-            }
-
-            // if keyLevel is greater than 20
-            else if (keyLevel.HasValue && (keyLevel > 20))
-            {
-                query = query.Where(k => k.KeyLevel == 20);
-                var data = await query.FirstOrDefaultAsync();              
-               
-                return Ok(new { keyLevel, itemLevel = data.ItemLevel });
-            }         
-
-            // if there was an issue finding data in the database (very bad)
-            if (query == null)
-            {
-                return NotFound(); 
-            }
-
-            return Ok(query);
         }
 
     }

@@ -87,20 +87,27 @@
                .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,guild,gear")
                .As<RaiderIOCharacterDataModel>();
 
-                List<KeyItemLevel> KeysData = await client
+                Dictionary<string, string> KeysData = await client
                     .GetAsync("https://localhost:7031/api/v1/mythicplus/keystone-vault-reward")
-                    .As<List<KeyItemLevel>>();
-
-                Dictionary<int, int> dictionary = KeysData.ToDictionary(k => k.KeyLevel, k => k.ItemLevel);
-
+                    .As<Dictionary<string, string>>();
+                var dictionary = new Dictionary<int, int>();
+                foreach (var kvp in KeysData)
+                {
+                    dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
+                }
+             
+                characterLookupModel.MythicKeystoneValues = dictionary;
                 characterLookupModel.RaiderIOCharacterData = ResponseData;
+
                 List<int> intList = await GetDungeonVaultSlots(ResponseData, characterLookupModel.MythicKeystoneValues);
                 characterLookupModel.DungeonVaultSlots = intList;
+
                 string color = await GetClassColor();
                 characterLookupModel.classColor = color;
 
                 characterLookupModel.SuccessfullyRetrievedCharacter = true;
                 dataLoaded = true;
+
                 return characterLookupModel;
             }
             catch
