@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Models.BattleNet.OAuth;
 using Models.BattleNet.Public;
 using Models.Constants;
+using Models.RaiderIO.Character;
+using Models.WhatChores;
 using Models.WhatChores.API;
 using Pathoschild.Http.Client;
 using Swashbuckle.AspNetCore.Annotations;
@@ -25,7 +27,7 @@ namespace API.Controllers
         OperationId = "GetRealmData",
         Tags = ["General", "Get"]
         )]
-        public async Task<List<RealmModel>> Get()
+        public async Task<List<RealmModel>> GetRealms()
         {
             var realmNames = await _context.tbl_USRealms
                                           .Select(r => new RealmModel { RealmName = r.RealmName })
@@ -33,6 +35,7 @@ namespace API.Controllers
 
             return realmNames;
         }
+
         [HttpGet("wowtoken")]
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
@@ -80,7 +83,7 @@ namespace API.Controllers
 
         }
         [HttpGet("class")]
-        public async Task<ActionResult<List<tbl_ClassData>>> GetRealmNames(bool getColor)
+        public async Task<ActionResult<List<tbl_ClassData>>> GetClassData(bool getColor)
         {
             if (getColor)
             {
@@ -100,7 +103,89 @@ namespace API.Controllers
             }
         }
 
+        [HttpGet("charData")]
+        public async Task<CharacterLookupModel> GetCharacterData(string name, string region, string realm)
+        {
+            FluentClient client = new();
+            CharacterLookupModel characterLookupModel = new();
+            RaiderIOCharacterDataModel ResponseData = await client
+                  .GetAsync("https://raider.io/api/v1/characters/profile")
+                  .WithArgument("region", region)
+                  .WithArgument("name", name)
+                  .WithArgument("realm", realm.Replace(" ", "-"))
+                  .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,mythic_plus_scores_by_season:current,guild,gear")
+                  .As<RaiderIOCharacterDataModel>();
 
+            Dictionary<string, string> KeysData = await client
+                .GetAsync("https://localhost:7031/api/v1/mythicplus/keystone-vault-reward")
+                .As<Dictionary<string, string>>();
 
+            var dictionary = new Dictionary<int, int>();
+
+            foreach (var kvp in KeysData)
+            {
+                dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
+            }
+
+            characterLookupModel.MythicKeystoneValues = dictionary;
+            characterLookupModel.RaiderIOCharacterData = ResponseData;
+
+            List<int> intList = await GetDungeonVaultSlots(ResponseData, characterLookupModel.MythicKeystoneValues);
+            characterLookupModel.DungeonVaultSlots = intList;
+
+            string color = await GetClassColor(characterLookupModel.RaiderIOCharacterData.char_class);
+            characterLookupModel.classColor = color;
+
+            characterLookupModel.SuccessfullyRetrievedCharacter = true;          
+
+            return characterLookupModel;
+        }
+        public class ClassNameColor
+        {
+            public string ClassName { get; set; }
+            public string ClassColor { get; set; }
+        }
+        private static Task<List<int>> GetDungeonVaultSlots(RaiderIOCharacterDataModel characterData, Dictionary<int, int> mythicKeystoneValues)
+        {
+            List<int> intList = [];
+
+            foreach (var run in characterData.mythic_plus_weekly_highest_level_runs)
+            {
+                if (mythicKeystoneValues.TryGetValue(run.mythic_level, out int value))
+                {
+                    intList.Add(value);
+                }
+                else if (run.mythic_level > 20)
+                {
+                    // If the key level is greater than 20, assign the maximum score
+                    intList.Add(mythicKeystoneValues[20]);
+                }
+            }
+
+            intList = [.. intList.OrderByDescending(x => x)];
+
+            return Task.FromResult(intList);
+        }
+        private async Task<string> GetClassColor(string char_class)
+        {
+            FluentClient client = new();            
+            List<ClassNameColor> classMap = await client
+          .GetAsync("https://localhost:7031/api/v1/general/class?getColor=true")
+          .As<List<ClassNameColor>>();
+           
+            string color = "black"; 
+
+            
+            foreach (var item in classMap)
+            {
+                if (item.ClassName == char_class)
+                {
+                    color = item.ClassColor; 
+                    break;
+                }
+            }
+
+            return color;
+        }
     }
 }

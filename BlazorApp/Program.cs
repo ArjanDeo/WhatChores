@@ -24,7 +24,7 @@ namespace BlazorApp
             builder.Services.AddSingleton<CharacterLookupModel>();
             builder.Services.AddSingleton<FluentClient>();
           //  builder.Services.AddSingleton<NavigationManager>();
-
+          http://localhost:5193/Character/Tichondrius/Toderick
 
 			builder.Services.AddSingleton<RaiderIOMythicPlusAffixesModel>();
 
@@ -47,7 +47,6 @@ namespace BlazorApp
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
-
             app.Run();
         }
     }
