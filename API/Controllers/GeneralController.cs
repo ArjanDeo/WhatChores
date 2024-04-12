@@ -11,6 +11,7 @@ using Models.RaiderIO.Character;
 using Models.WhatChores;
 using Models.WhatChores.API;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Pathoschild.Http.Client;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -106,8 +107,11 @@ namespace API.Controllers
             }
         }
         [HttpGet("charRaids")]
-        public async Task<ActionResult<WoWCharacterRaidsModel>> GetCharacterRaids(string realm, string name, string region)
+        public async Task<ActionResult<RaidModel>> GetCharacterRaids(string realm, string name, string region)
         {
+            realm = realm.ToLower();
+            name = name.ToLower();
+            region = region.ToLower();
             return await _cache.GetOrAddAsync($"GetCharacterRaids_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
             {
                 FluentClient client = new();
@@ -168,9 +172,38 @@ namespace API.Controllers
                     }
                 }               
                 string resultJson = JsonConvert.SerializeObject(lastKilledTimestamps, Formatting.Indented);
-                return Ok(resultJson);
+                var seperatedRaids = new List<RaidModel>();
+
+                List<RaidEncounter> encounters = [];
+
+                foreach (var entry in lastKilledTimestamps)
+                {
+                    encounters.Add(new RaidEncounter
+                    {
+                        Boss = entry.Key,
+                        LastKillTimestamp = entry.Value
+                    });
+                }
+                CharacterLastKilledBossesModel x = new();
+                foreach (var encounter in encounters)
+                {
+                    DateTime lastKillDateTime = encounter.LastKillTimestamp;
+
+                   
+                    DateTime thisReset = DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek).AddDays(2).AddHours(15);
+                    
+
+                    if (lastKillDateTime > thisReset)
+                    {
+                        x.IsCleared = true;
+                        x.Boss = encounter.Boss;
+                    }
+                }
+
+                return Ok(x);
             });
-        }
+        }      
+     
 
         [HttpGet("charData")]       
         public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string region, string realm)

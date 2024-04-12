@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 export default function Character() {
     const { realm, name } = useParams();
     const [characterData, setCharacterData] = useState(null);
+    const [characterRaidData, setCharacterRaidData] = useState('');
 
     useEffect(() => {
         const fetchCharacterData = async () => {
@@ -14,15 +15,35 @@ export default function Character() {
             } catch (error) {
                 console.error('Error fetching character data:', error);
             }
-        };
+        }
+        const fetchCharacterRaidData = async () => {
+            try {
+                const response = await fetch(`https://localhost:7031/api/v1/general/charRaids?realm=${realm}&name=${name}&region=us`);
+                const data = await response.json();
+                setCharacterRaidData(data);
+            } catch (error) {
+                console.error('Error fetching character data:', error);
+            }
+        }
+        ;
 
         fetchCharacterData();
+        fetchCharacterRaidData();
     }, [realm, name]);
 
-    if (!characterData) {
+
+
+    
+    if (!characterData || !characterRaidData) {
         return <div>Loading...</div>;
     }
 
+    let count = 0;
+    for (let key in characterRaidData) {
+    if (Object.prototype.hasOwnProperty.call(characterRaidData, key) && characterRaidData[key] === true && key === "isCleared") {
+        count++;
+    }
+    }
     const {
         raiderIOCharacterData: {
             name: characterName,
@@ -70,10 +91,16 @@ export default function Character() {
                     </thead>
                     <tbody className="bg-slate-700 divide-y divide-slate-600">
                         <tr>
-                            <td className="px-6 py-4 whitespace-no-wrap text-xl">Raids</td>
-                            <td className="px-6 py-4 whitespace-no-wrap">Defeat 2 Bosses</td>
-                            <td className="px-6 py-4 whitespace-no-wrap">Defeat 4 Bosses</td>
-                            <td className="px-6 py-4 whitespace-no-wrap">Defeat 7 Bosses</td>
+                            <td className="px-6 py-4 whitespace-no-wrap text-xl">Raids</td>                           
+                            <td className={`px-6 py-4 whitespace-no-wrap ${count >= 2 ? 'text-lime-400' : 'text-red-600'}`}>
+                                Defeat 2 Bosses
+                            </td>
+                            <td className={`px-6 py-4 whitespace-no-wrap ${count >= 4 ? 'text-lime-400' : 'text-red-600'}`}>
+                                Defeat 4 Bosses
+                            </td>
+                            <td className={`px-6 py-4 whitespace-no-wrap ${count >= 7 ? 'text-lime-400' : 'text-red-600'}`}>
+                                Defeat 7 Bosses
+                            </td>
                         </tr>
                         <tr>
                             <td className="px-6 py-4 whitespace-no-wrap text-xl">Dungeons ({mythic_plus_weekly_highest_level_runs.length} completed)</td>
@@ -86,13 +113,7 @@ export default function Character() {
                             <td className={`px-6 py-4 whitespace-no-wrap ${mythic_plus_weekly_highest_level_runs && mythic_plus_weekly_highest_level_runs.length >= 8 ? 'text-lime-400' : 'text-red-600'}`}>
                                 Complete 8 Heroic, Mythic, or Timewalking Dungeons
                             </td>
-                        </tr>
-                        <tr>
-                            <td className="px-6 py-4 whitespace-no-wrap text-xl">PvP</td>
-                            <td className="px-6 py-4 whitespace-no-wrap">Defeat 2 Bosses</td>
-                            <td className="px-6 py-4 whitespace-no-wrap">Defeat 4 Bosses</td>
-                            <td className="px-6 py-4 whitespace-no-wrap">Defeat 7 Bosses</td>
-                        </tr>
+                        </tr>                       
                     </tbody>
                 </table>
             </div>
