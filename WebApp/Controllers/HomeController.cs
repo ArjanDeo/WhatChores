@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models.BattleNet.OAuth;
-using Models.BattleNet.Public;
 using Models.Constants;
 using Models.RaiderIO.Character;
 using Models.RaiderIO.MythicPlus;

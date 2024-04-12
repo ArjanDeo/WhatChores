@@ -1,7 +1,6 @@
 using BlazorApp.Components;
 using LazyCache;
 using Microsoft.AspNetCore.Components;
-using Models.BattleNet.Public;
 using Models.RaiderIO.MythicPlus;
 using Models.WhatChores;
 using Models.WhatChores.API;

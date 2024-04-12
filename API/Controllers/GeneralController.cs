@@ -1,10 +1,11 @@
-﻿using Azure;
-using DataAccess;
+﻿using DataAccess;
 using DataAccess.Tables;
+using LazyCache;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models.BattleNet.OAuth;
 using Models.BattleNet.Public;
+using Models.BattleNet.Public.Character;
 using Models.Constants;
 using Models.RaiderIO.Character;
 using Models.WhatChores;
@@ -16,9 +17,10 @@ namespace API.Controllers
 {
     [Route("api/v1/general")]
     [ApiController]
-    public class GeneralController(WhatChoresDbContext context) : ControllerBase
-    {        
+    public class GeneralController(WhatChoresDbContext context, CachingService cache) : ControllerBase
+    {
         private readonly WhatChoresDbContext _context = context;
+        private readonly IAppCache _cache = cache;
 
         [HttpGet("realms")]
         [SwaggerOperation(
@@ -37,6 +39,7 @@ namespace API.Controllers
         }
 
         [HttpGet("wowtoken")]
+        [ResponseCache(Duration = 300)] // 5 minutes
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
             FluentClient client = new();
@@ -102,43 +105,80 @@ namespace API.Controllers
                 return Ok(realmNames);
             }
         }
-
-        [HttpGet("charData")]
-        public async Task<CharacterLookupModel> GetCharacterData(string name, string region, string realm)
+        [HttpGet("charRaids")]
+        public async Task<ActionResult<WoWCharacterRaidsModel>> GetCharacterRaids(string realm, string name, string region)
         {
-            FluentClient client = new();
-            CharacterLookupModel characterLookupModel = new();
-            RaiderIOCharacterDataModel ResponseData = await client
-                  .GetAsync("https://raider.io/api/v1/characters/profile")
-                  .WithArgument("region", region)
-                  .WithArgument("name", name)
-                  .WithArgument("realm", realm.Replace(" ", "-"))
-                  .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,mythic_plus_scores_by_season:current,guild,gear")
-                  .As<RaiderIOCharacterDataModel>();
-
-            Dictionary<string, string> KeysData = await client
-                .GetAsync("https://localhost:7031/api/v1/mythicplus/keystone-vault-reward")
-                .As<Dictionary<string, string>>();
-
-            var dictionary = new Dictionary<int, int>();
-
-            foreach (var kvp in KeysData)
+            return await _cache.GetOrAddAsync($"GetCharacterRaids_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
             {
-                dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
-            }
+                FluentClient client = new();
+                if (AppConstants.AccessToken == null)
+                {
+                    Dictionary<string, string> AccessTokenPayload = new()
+                    {
+                        [":region"] = "us",
+                        ["grant_type"] = "client_credentials"
+                    };
 
-            characterLookupModel.MythicKeystoneValues = dictionary;
-            characterLookupModel.RaiderIOCharacterData = ResponseData;
+                    AccessTokenModel Response = await client
+                      .PostAsync("https://oauth.battle.net/oauth/token")
+                      .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
+                      .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
+                      .As<AccessTokenModel>();
 
-            List<int> intList = await GetDungeonVaultSlots(ResponseData, characterLookupModel.MythicKeystoneValues);
-            characterLookupModel.DungeonVaultSlots = intList;
+                    AppConstants.AccessToken = Response;
+                }
+                WoWCharacterRaidsModel data = await client
+                    .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/encounters/raids")
+                    .WithArgument(":region", region)
+                    .WithArgument("namespace", $"profile-{region}")
+                    .WithArgument("locale", "en_US")
+                    .WithBearerAuthentication(AppConstants.AccessToken.access_token)
+                    .As<WoWCharacterRaidsModel>();
 
-            string color = await GetClassColor(characterLookupModel.RaiderIOCharacterData.char_class);
-            characterLookupModel.classColor = color;
+                return Ok(data);
+            });
+        }
 
-            characterLookupModel.SuccessfullyRetrievedCharacter = true;          
+        [HttpGet("charData")]       
+        public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string region, string realm)
+        {
+            return await _cache.GetOrAddAsync($"GetCharacterData_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
+            {
+                FluentClient client = new();
+                CharacterLookupModel characterLookupModel = new();
+                RaiderIOCharacterDataModel ResponseData = await client
+                      .GetAsync("https://raider.io/api/v1/characters/profile")
+                      .WithArgument("region", region)
+                      .WithArgument("name", name)
+                      .WithArgument("realm", realm.Replace(" ", "-"))
+                      .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,mythic_plus_scores_by_season:current,guild,gear")
+                      .As<RaiderIOCharacterDataModel>();
 
-            return characterLookupModel;
+                Dictionary<string, string> KeysData = await client
+                    .GetAsync("https://localhost:7031/api/v1/mythicplus/keystone-vault-reward")
+                    .As<Dictionary<string, string>>();
+
+                var dictionary = new Dictionary<int, int>();
+
+                foreach (var kvp in KeysData)
+                {
+                    dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
+                }
+
+                characterLookupModel.MythicKeystoneValues = dictionary;
+                characterLookupModel.RaiderIOCharacterData = ResponseData;
+
+                List<int> intList = await GetDungeonVaultSlots(ResponseData, characterLookupModel.MythicKeystoneValues);
+                characterLookupModel.DungeonVaultSlots = intList;
+
+                string color = await GetClassColor(characterLookupModel.RaiderIOCharacterData.char_class);
+                characterLookupModel.classColor = color;
+
+                characterLookupModel.SuccessfullyRetrievedCharacter = true;
+
+                return Ok(characterLookupModel);
+            });
+           
         }
         public class ClassNameColor
         {
@@ -166,14 +206,14 @@ namespace API.Controllers
 
             return Task.FromResult(intList);
         }
-        private async Task<string> GetClassColor(string char_class)
+        private static async Task<string> GetClassColor(string char_class)
         {
             FluentClient client = new();            
             List<ClassNameColor> classMap = await client
-          .GetAsync("https://localhost:7031/api/v1/general/class?getColor=true")
-          .As<List<ClassNameColor>>();
+              .GetAsync("https://localhost:7031/api/v1/general/class?getColor=true")
+              .As<List<ClassNameColor>>();
            
-            string color = "black"; 
+            string color = "black"; // default
 
             
             foreach (var item in classMap)

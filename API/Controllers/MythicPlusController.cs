@@ -7,14 +7,9 @@ namespace API.Controllers
 {
     [Route("api/v1/mythicplus")]
     [ApiController]
-    public class MythicPlusController : ControllerBase
+    public class MythicPlusController(WhatChoresDbContext context) : ControllerBase
     {
-        private readonly WhatChoresDbContext _context;
-
-        public MythicPlusController(WhatChoresDbContext context)
-        {
-            _context = context;
-        }
+        private readonly WhatChoresDbContext _context = context;       
 
         [HttpGet("keystone-vault-reward")]
         public async Task<ActionResult<object>> Get(int? keyLevel)
