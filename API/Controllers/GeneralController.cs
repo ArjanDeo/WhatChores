@@ -53,7 +53,7 @@ namespace API.Controllers
                 };
 
                 AccessTokenModel Response = await client
-                  .PostAsync("https://oauth.battle.net/oauth/token")
+                  .PostAsync("https://us.battle.net/oauth/token")
                   .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
                   .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
                   .As<AccessTokenModel>();  

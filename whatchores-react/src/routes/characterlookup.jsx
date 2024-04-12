@@ -10,7 +10,7 @@ export default function CharacterLookup() {
     useEffect(() => {
         const fetchRealmData = async () => {
             try {
-                const response = await fetch('https://localhost:7031/api/v1/general/realms');
+                const response = await fetch('https://whatchoresapi.azurewebsites.net/localhost:7031/api/v1/general/realms');
                 const data = await response.json();
                 setRealmData(data);
             } catch (error) {

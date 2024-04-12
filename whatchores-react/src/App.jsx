@@ -7,7 +7,7 @@ export default function App() {
   useEffect(() => {
     const tokenfetchData = async () => {
       try {
-        const response = await fetch('https://localhost:7031/api/v1/general/wowtoken');
+        const response = await fetch('https://whatchoresapi.azurewebsites.net/api/v1/general/wowtoken');
         const data = await response.json();
         setWowTokenValue(data);
       } catch (error) {

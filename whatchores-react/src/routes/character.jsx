@@ -9,7 +9,7 @@ export default function Character() {
     useEffect(() => {
         const fetchCharacterData = async () => {
             try {
-                const response = await fetch(`https://localhost:7031/api/v1/general/charData?realm=${realm}&name=${name}&region=us`);
+                const response = await fetch(`https://whatchoresapi.azurewebsites.net/api/v1/general/charData?realm=${realm}&name=${name}&region=us`);
                 const data = await response.json();
                 setCharacterData(data);
             } catch (error) {
@@ -18,7 +18,7 @@ export default function Character() {
         }
         const fetchCharacterRaidData = async () => {
             try {
-                const response = await fetch(`https://localhost:7031/api/v1/general/charRaids?realm=${realm}&name=${name}&region=us`);
+                const response = await fetch(`https://whatchoresapi.azurewebsites.net/api/v1/general/charRaids?realm=${realm}&name=${name}&region=us`);
                 const data = await response.json();
                 setCharacterRaidData(data);
             } catch (error) {
