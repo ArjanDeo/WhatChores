@@ -1,16 +1,14 @@
 using DataAccess;
+using LazyCache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Pathoschild.Http.Client;
 
 var builder = WebApplication.CreateBuilder(args);
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 // Add services to the container.
 builder.Services.AddCors();
 builder.Services.AddControllers();
 
-builder.Services.AddResponseCaching();
-
+builder.Services.AddSingleton<CachingService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

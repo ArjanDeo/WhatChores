@@ -10,6 +10,7 @@ using Models.Constants;
 using Models.RaiderIO.Character;
 using Models.WhatChores;
 using Models.WhatChores.API;
+using Newtonsoft.Json;
 using Pathoschild.Http.Client;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -38,8 +39,7 @@ namespace API.Controllers
             return realmNames;
         }
 
-        [HttpGet("wowtoken")]
-        [ResponseCache(Duration = 300)] // 5 minutes
+        [HttpGet("wowtoken")]       
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
             FluentClient client = new();
@@ -128,14 +128,47 @@ namespace API.Controllers
                     AppConstants.AccessToken = Response;
                 }
                 WoWCharacterRaidsModel data = await client
-                    .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/encounters/raids")
-                    .WithArgument(":region", region)
-                    .WithArgument("namespace", $"profile-{region}")
-                    .WithArgument("locale", "en_US")
+                    .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/encounters/raids?namespace=profile-us&locale=en_US")
                     .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                     .As<WoWCharacterRaidsModel>();
 
-                return Ok(data);
+                Dictionary<string, DateTime> lastKilledTimestamps = new Dictionary<string, DateTime>();
+
+                foreach (var expansion in data.expansions)
+                {
+                    
+                    foreach (var instance in expansion.instances)
+                    {
+                        
+                        foreach (var mode in instance.modes)
+                        {
+                            
+                            foreach (var encounter in mode.progress.encounters)
+                            {
+                                string bossName = encounter.encounter.name;
+                                long lastKillTimestamp = encounter.last_kill_timestamp;
+
+                               
+                                DateTime lastKillDateTime = DateTimeOffset.FromUnixTimeMilliseconds(lastKillTimestamp).UtcDateTime;
+
+                                
+                                if (lastKilledTimestamps.TryGetValue(bossName, out DateTime value))
+                                {
+                                    if (value < lastKillDateTime)
+                                    {
+                                        lastKilledTimestamps[bossName] = lastKillDateTime;
+                                    }
+                                }
+                                else
+                                {
+                                    lastKilledTimestamps.Add(bossName, lastKillDateTime);
+                                }
+                            }
+                        }
+                    }
+                }               
+                string resultJson = JsonConvert.SerializeObject(lastKilledTimestamps, Formatting.Indented);
+                return Ok(resultJson);
             });
         }
 

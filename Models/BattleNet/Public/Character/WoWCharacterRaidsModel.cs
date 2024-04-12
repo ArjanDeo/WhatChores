@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,11 +24,10 @@ namespace Models.BattleNet.Public.Character
 
     public class Encounter
     {
-        public Encounter encounter { get; set; }
+        public Encounter2 encounter { get; set; }
         public int completed_count { get; set; }
-        public object last_kill_timestamp { get; set; }
-    }
-
+        public long last_kill_timestamp { get; set; }
+    }   
     public class Encounter2
     {
         public Key key { get; set; }
@@ -36,7 +37,7 @@ namespace Models.BattleNet.Public.Character
 
     public class Expansion
     {
-        public Expansion expansion { get; set; }
+        public Expansion2 expansion { get; set; }
         public List<Instance> instances { get; set; }
     }
 
@@ -49,7 +50,7 @@ namespace Models.BattleNet.Public.Character
 
     public class Instance
     {
-        public Instance instance { get; set; }
+        public Instance2 instance { get; set; }
         public List<Mode> modes { get; set; }
     }
 
