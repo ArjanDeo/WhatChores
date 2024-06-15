@@ -32,18 +32,46 @@ export default function Character() {
     }, [realm, name]);
 
 
-
+    const validRaidBosses = [
+        "Eranog",
+        "Terros",
+        "Sennarth, the Cold Breath",
+        "The Primal Council",
+        "Dathea, Ascended",
+        "Kurog Grimtotem",
+        "Broodkeeper Diurna",
+        "Raszageth the Storm Eater",        
+        "Kazzara, the Hellforged",
+        "The Amalgamation Chamber",
+        "The Forgotten Experiments",
+        "Assault of the Zaqali",
+        "Rashok, the Elder",
+        "The Vigilant Steward, Zskarn",
+        "Magmorax",
+        "Echo of Neltharion",
+        "Scalecommander Sarkareth",
+        "Gnarlroot",
+        "Igira the Cruel",
+        "Volcoross",
+        "Council of Dreams",
+        "Larodar, Keeper of the Flame",
+        "Nymue, Weaver of the Cycle",
+        "Smolderon",
+        "Tindral Sageswift, Seer of the Flame",
+        "Fyrakk the Blazing"
+    ];
     
     if (!characterData || !characterRaidData) {
         return <div>Loading...</div>;
     }
 
     let count = 0;
-    for (let key in characterRaidData) {
-    if (Object.prototype.hasOwnProperty.call(characterRaidData, key) && characterRaidData[key] === true && key === "isCleared") {
-        count++;
-    }
-    }
+    for (let i = 0; i < characterRaidData.length; i++) {
+        if (validRaidBosses.includes(characterRaidData[i])) {
+            count++;
+        }
+}
+console.log(count);
     const {
         raiderIOCharacterData: {
             name: characterName,
@@ -51,16 +79,29 @@ export default function Character() {
             gear: { item_level_equipped: itemLevel },
             active_spec_name: activeSpec,
             char_class: characterClass,
-            raid_progression: { amirdrassilthedreamshope },
+            raid_progression: {
+                aberrustheshadowedcrucible,
+                amirdrassilthedreamshope,
+                vaultoftheincarnates
+            },
             mythic_plus_scores_by_season,
             mythic_plus_weekly_highest_level_runs
         },
         classColor
     } = characterData;
 
-    const renderRaidProgress = amirdrassilthedreamshope ? 
-        <p className='mt-2 text-inherit'>Raid Progress: {amirdrassilthedreamshope.summary}</p> : 
-        <p className='mt-2 text-inherit'>No Raid Data</p>;
+    const renderRaidProgress = amirdrassilthedreamshope ? (
+        <div>
+            <p className='mt-2 text-inherit'>Raid Progress (AtDH): {amirdrassilthedreamshope.summary}</p>
+            <p className='text-inherit'>Raid Progress (AtSC): {aberrustheshadowedcrucible.summary}</p>
+            <p className='text-inherit'>Raid Progress (VotI): {vaultoftheincarnates.summary}</p>
+        </div>
+    ) : (
+        <p className='mt-2 text-inherit'>No Raid Progress</p>
+    );
+    
+    let characterArmory = `https://worldofwarcraft.blizzard.com/en-us/character/us/${realm}/${name}`;
+    let guildArmory = `https://worldofwarcraft.blizzard.com/en-us/guild/us/${realm}/${guildName}`
 
     return (
         <>
@@ -71,8 +112,8 @@ export default function Character() {
                             <img className="h-32 w-full object-cover md:h-full md:w-48" src={characterData.raiderIOCharacterData.thumbnail_url} alt="Character Thumbnail Picture" />
                         </div>
                         <div style={{ color: `${classColor}` }} className="p-8">
-                            <div className="uppercase tracking-wide text-md font-semibold">{characterName} <a>&lt;{guildName}&gt;</a></div>
-                            <a className="block mt-1 text-lg leading-tight font-medium text-inherit hover:underline">Item Level {itemLevel} {activeSpec} {characterClass}</a>
+                            <div className="uppercase tracking-wide text-md font-semibold"><a className='hover:text-purple-600 transition-colors' href={characterArmory}>{characterName}</a> <a className='hover:text-purple-600 transition-colors' href={guildArmory}>&lt;{guildName}&gt;</a></div>
+                            <a className="block mt-1 text-lg leading-tight font-medium text-inherit hover:underline">Item Level {Math.ceil(itemLevel)} {activeSpec} {characterClass}</a>
                             {renderRaidProgress}
                             {mythic_plus_scores_by_season.map((score, key) => <p key={key}>Mythic+ Score: {score.scores.all}</p>)}
                         </div>
@@ -93,13 +134,13 @@ export default function Character() {
                         <tr>
                             <td className="px-6 py-4 whitespace-no-wrap text-xl">Raids</td>                           
                             <td className={`px-6 py-4 whitespace-no-wrap ${count >= 2 ? 'text-lime-400' : 'text-red-600'}`}>
-                                Defeat 2 Bosses
+                                Defeat 2 Awakened Raid Bosses
                             </td>
                             <td className={`px-6 py-4 whitespace-no-wrap ${count >= 4 ? 'text-lime-400' : 'text-red-600'}`}>
-                                Defeat 4 Bosses
+                                Defeat 4 Awakened Raid Bosses
                             </td>
                             <td className={`px-6 py-4 whitespace-no-wrap ${count >= 7 ? 'text-lime-400' : 'text-red-600'}`}>
-                                Defeat 7 Bosses
+                                Defeat 7 Awakened Raid Bosses
                             </td>
                         </tr>
                         <tr>

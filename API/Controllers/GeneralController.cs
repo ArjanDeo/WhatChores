@@ -119,7 +119,7 @@ namespace API.Controllers
             }
         }
         [HttpGet("charRaids")]
-        public async Task<ActionResult<RaidModel>> GetCharacterRaids(string realm, string name, string region)
+        public async Task<ActionResult<RaidModel>> GetCharacterRaids(string name, string realm, string region)
         {
             realm = realm.ToLower();
             name = name.ToLower();
@@ -213,15 +213,57 @@ namespace API.Controllers
 
                 return Ok(ClearedBossList);
             });
-        }      
-     
+        }
+        //[HttpGet("charMedia")]
+        //public async Task<WoWCharacterMediaModel> GetCharacterMedia(string name, string realm, string region)
+        //{
+        //    if (AppConstants.AccessToken == null)
+        //    {
+        //        Dictionary<string, string> AccessTokenPayload = new()
+        //        {
+        //            [":region"] = "us",
+        //            ["grant_type"] = "client_credentials"
+        //        };
+
+        //        AccessTokenModel Response = await client
+        //          .PostAsync("https://us.battle.net/oauth/token")
+        //          .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
+        //          .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
+        //          .As<AccessTokenModel>();
+
+        //        AppConstants.AccessToken = Response;
+        //    }
+
+        //    WoWCharacterMediaModel data = await client
+        //        .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name.ToLower()}/character-media?namespace=profile-us&locale=en_US&:region=us")
+        //        .WithBearerAuthentication(AppConstants.AccessToken.access_token)
+        //        .As<WoWCharacterMediaModel>();
+
+        //    return data;
+        //}
 
         [HttpGet("charData")]       
-        public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string region, string realm)
+        public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string realm, string region)
         {
             return await _cache.GetOrAddAsync($"GetCharacterData_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
             {
-               // FluentClient client = new();
+                FluentClient client = new();
+                if (AppConstants.AccessToken == null)
+                {
+                    Dictionary<string, string> AccessTokenPayload = new()
+                    {
+                        [":region"] = "us",
+                        ["grant_type"] = "client_credentials"
+                    };
+
+                    AccessTokenModel Response = await client
+                      .PostAsync("https://us.battle.net/oauth/token")
+                      .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
+                      .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
+                      .As<AccessTokenModel>();
+
+                    AppConstants.AccessToken = Response;
+                }
                 CharacterLookupModel characterLookupModel = new();
                 RaiderIOCharacterDataModel ResponseData = await client
                       .GetAsync("https://raider.io/api/v1/characters/profile")
@@ -241,7 +283,12 @@ namespace API.Controllers
                 {
                     dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
                 }
+                WoWCharacterMediaModel data = await client
+               .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name.ToLower()}/character-media?namespace=profile-us&locale=en_US&:region=us")
+               .WithBearerAuthentication(AppConstants.AccessToken.access_token)
+               .As<WoWCharacterMediaModel>();
 
+                characterLookupModel.CharacterMedia = data;
                 characterLookupModel.MythicKeystoneValues = dictionary;
                 characterLookupModel.RaiderIOCharacterData = ResponseData;
 
