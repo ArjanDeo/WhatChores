@@ -8,7 +8,7 @@ namespace Models.WhatChores.API
 {
     public class CharacterLastKilledBossesModel
     {
-        public string Boss { get; set; }
-        public bool IsCleared { get; set; }
+        public List<string> Boss { get; set; }
+      //  public bool IsCleared { get; set; }
     }
 }

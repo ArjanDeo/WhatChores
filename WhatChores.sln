@@ -3,15 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34310.174
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "WebApp\WebApp.csproj", "{C004183C-98A7-4853-BE5C-DEB81A8FA8FA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "Models\Models.csproj", "{E7659A45-75F4-46AD-B79B-16DDD1ADCB1E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccess", "DataAccess\DataAccess.csproj", "{B74E0872-8F16-40CC-9B4F-9AB0A9B05C76}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "API", "API\API.csproj", "{3495E930-886E-4B1E-800C-A604A3DD8257}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorApp", "BlazorApp\BlazorApp.csproj", "{3A3B8151-318E-4905-ADC8-938DD7439755}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot", "DiscordBot\DiscordBot.csproj", "{7A1F9BD6-80E4-48EA-9204-DD4CBBAAB871}"
 EndProject
@@ -21,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C004183C-98A7-4853-BE5C-DEB81A8FA8FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C004183C-98A7-4853-BE5C-DEB81A8FA8FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C004183C-98A7-4853-BE5C-DEB81A8FA8FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C004183C-98A7-4853-BE5C-DEB81A8FA8FA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E7659A45-75F4-46AD-B79B-16DDD1ADCB1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E7659A45-75F4-46AD-B79B-16DDD1ADCB1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7659A45-75F4-46AD-B79B-16DDD1ADCB1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -37,10 +29,6 @@ Global
 		{3495E930-886E-4B1E-800C-A604A3DD8257}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3495E930-886E-4B1E-800C-A604A3DD8257}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3495E930-886E-4B1E-800C-A604A3DD8257}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3A3B8151-318E-4905-ADC8-938DD7439755}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A3B8151-318E-4905-ADC8-938DD7439755}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A3B8151-318E-4905-ADC8-938DD7439755}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A3B8151-318E-4905-ADC8-938DD7439755}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7A1F9BD6-80E4-48EA-9204-DD4CBBAAB871}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7A1F9BD6-80E4-48EA-9204-DD4CBBAAB871}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A1F9BD6-80E4-48EA-9204-DD4CBBAAB871}.Release|Any CPU.ActiveCfg = Release|Any CPU

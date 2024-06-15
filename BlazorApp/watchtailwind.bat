@@ -1,1 +1,0 @@
-tailwindcss-windows-x64.exe -i  .\Styles\app.css -o .\wwwroot\css\app.css --watch

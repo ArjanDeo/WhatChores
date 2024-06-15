@@ -2,6 +2,7 @@ using DataAccess;
 using LazyCache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Models.WhatChores.API;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -9,6 +10,7 @@ builder.Services.AddCors();
 builder.Services.AddControllers();
 
 builder.Services.AddSingleton<CachingService>();
+builder.Services.Configure<SettingsModel>(builder.Configuration.GetSection("Settings"));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -24,22 +26,30 @@ builder.Services.AddSwaggerGen(options =>
 
 
 
+if(builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<WhatChoresDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DevConnection")));
+} else
+{
+    builder.Services.AddDbContext<WhatChoresDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("ProdConnection")));
+}
 
 
-builder.Services.AddDbContext<WhatChoresDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 //builder.Services.AddSingleton<FluentClient>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.DefaultModelsExpandDepth(-1);
     });
-}
+    app.UseDeveloperExceptionPage();
+//}
 
 app.UseHttpsRedirection();
 app.UseCors(builder => builder

@@ -300,7 +300,7 @@ namespace Models.RaiderIO.Character
 
     public class Healer
     {
-        public int score { get; set; }
+        public double score { get; set; }
         public string color { get; set; }
     }
 
@@ -340,12 +340,12 @@ namespace Models.RaiderIO.Character
     {
         public double all { get; set; }
         public double dps { get; set; }
-        public int healer { get; set; }
+        public double healer { get; set; }
         public double tank { get; set; }
         public double spec_0 { get; set; }
         public double spec_1 { get; set; }
         public double spec_2 { get; set; }
-        public int spec_3 { get; set; }
+        public double spec_3 { get; set; }
     }
 
     public class Segments

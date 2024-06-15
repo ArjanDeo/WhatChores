@@ -3,6 +3,7 @@ using DataAccess.Tables;
 using LazyCache;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Models.BattleNet.OAuth;
 using Models.BattleNet.Public;
 using Models.BattleNet.Public.Character;
@@ -11,7 +12,6 @@ using Models.RaiderIO.Character;
 using Models.WhatChores;
 using Models.WhatChores.API;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pathoschild.Http.Client;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -19,10 +19,23 @@ namespace API.Controllers
 {
     [Route("api/v1/general")]
     [ApiController]
-    public class GeneralController(WhatChoresDbContext context, CachingService cache) : ControllerBase
+    public class GeneralController : ControllerBase
     {
-        private readonly WhatChoresDbContext _context = context;
-        private readonly IAppCache _cache = cache;
+        private readonly WhatChoresDbContext _context;
+        private readonly IAppCache _cache;
+        private readonly SettingsModel _settings;
+        private readonly FluentClient whatChoresClient;
+        private readonly FluentClient client;
+        public GeneralController(WhatChoresDbContext context, CachingService cache, IOptions<SettingsModel> settingsOptions) 
+        {
+            _context = context;
+            _cache = cache;
+            _settings = settingsOptions.Value;
+            whatChoresClient = new FluentClient(_settings.DevUrl);
+            // whatChoresClient = new FluentClient(_settings.ProdUrl);           
+            client = new FluentClient();
+        }
+    
 
         [HttpGet("realms")]
         [SwaggerOperation(
@@ -34,8 +47,8 @@ namespace API.Controllers
         public async Task<List<RealmModel>> GetRealms()
         {
             var realmNames = await _context.tbl_USRealms
-                                          .Select(r => new RealmModel { RealmName = r.RealmName })
-                                          .ToListAsync();
+                .Select(r => new RealmModel { RealmName = r.RealmName })
+                .ToListAsync();
 
             return realmNames;
         }
@@ -43,7 +56,6 @@ namespace API.Controllers
         [HttpGet("wowtoken")]       
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
-            FluentClient client = new();
             if (AppConstants.AccessToken == null)
             {
                Dictionary<string,string> AccessTokenPayload = new()
@@ -113,8 +125,7 @@ namespace API.Controllers
             name = name.ToLower();
             region = region.ToLower();
             return await _cache.GetOrAddAsync($"GetCharacterRaids_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
-            {
-                FluentClient client = new();
+            {                
                 if (AppConstants.AccessToken == null)
                 {
                     Dictionary<string, string> AccessTokenPayload = new()
@@ -124,7 +135,7 @@ namespace API.Controllers
                     };
 
                     AccessTokenModel Response = await client
-                      .PostAsync("https://oauth.battle.net/oauth/token")
+                      .PostAsync("https://us.battle.net/oauth/token")
                       .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
                       .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
                       .As<AccessTokenModel>();
@@ -136,7 +147,7 @@ namespace API.Controllers
                     .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                     .As<WoWCharacterRaidsModel>();
 
-                Dictionary<string, DateTime> lastKilledTimestamps = new Dictionary<string, DateTime>();
+                Dictionary<string, DateTime> lastKilledTimestamps = [];
 
                 foreach (var expansion in data.expansions)
                 {
@@ -184,7 +195,7 @@ namespace API.Controllers
                         LastKillTimestamp = entry.Value
                     });
                 }
-                CharacterLastKilledBossesModel x = new();
+                List<string> ClearedBossList = new();
                 foreach (var encounter in encounters)
                 {
                     DateTime lastKillDateTime = encounter.LastKillTimestamp;
@@ -195,12 +206,12 @@ namespace API.Controllers
 
                     if (lastKillDateTime > thisReset)
                     {
-                        x.IsCleared = true;
-                        x.Boss = encounter.Boss;
+                        // x.IsCleared = true;
+                        ClearedBossList.Add(encounter.Boss);
                     }
                 }
 
-                return Ok(x);
+                return Ok(ClearedBossList);
             });
         }      
      
@@ -210,7 +221,7 @@ namespace API.Controllers
         {
             return await _cache.GetOrAddAsync($"GetCharacterData_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
             {
-                FluentClient client = new();
+               // FluentClient client = new();
                 CharacterLookupModel characterLookupModel = new();
                 RaiderIOCharacterDataModel ResponseData = await client
                       .GetAsync("https://raider.io/api/v1/characters/profile")
@@ -220,8 +231,8 @@ namespace API.Controllers
                       .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,mythic_plus_scores_by_season:current,guild,gear")
                       .As<RaiderIOCharacterDataModel>();
 
-                Dictionary<string, string> KeysData = await client
-                    .GetAsync("https://localhost:7031/api/v1/mythicplus/keystone-vault-reward")
+                Dictionary<string, string> KeysData = await whatChoresClient
+                    .GetAsync($"api/v1/mythicplus/keystone-vault-reward")
                     .As<Dictionary<string, string>>();
 
                 var dictionary = new Dictionary<int, int>();
@@ -272,11 +283,11 @@ namespace API.Controllers
 
             return Task.FromResult(intList);
         }
-        private static async Task<string> GetClassColor(string char_class)
+        private async Task<string> GetClassColor(string char_class)
         {
-            FluentClient client = new();            
-            List<ClassNameColor> classMap = await client
-              .GetAsync("https://localhost:7031/api/v1/general/class?getColor=true")
+           // FluentClient client = new();            
+            List<ClassNameColor> classMap = await whatChoresClient
+              .GetAsync("api/v1/general/class?getColor=true")
               .As<List<ClassNameColor>>();
            
             string color = "black"; // default
