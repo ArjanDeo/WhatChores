@@ -31,8 +31,8 @@ namespace API.Controllers
             _context = context;
             _cache = cache;
             _settings = settingsOptions.Value;
-            whatChoresClient = new FluentClient(_settings.DevUrl);
-            // whatChoresClient = new FluentClient(_settings.ProdUrl);           
+           // whatChoresClient = new FluentClient(_settings.DevUrl);
+             whatChoresClient = new FluentClient(_settings.ProdUrl);           
             client = new FluentClient();
         }
     
@@ -200,9 +200,9 @@ namespace API.Controllers
                 {
                     DateTime lastKillDateTime = encounter.LastKillTimestamp;
 
-                   
-                    DateTime thisReset = DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek).AddDays(2).AddHours(15);
-                    
+
+                    //DateTime thisReset = DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek).AddDays(2).AddHours(15);
+                    DateTime thisReset = GetLastReset();
 
                     if (lastKillDateTime > thisReset)
                     {
@@ -241,10 +241,21 @@ namespace API.Controllers
 
         //    return data;
         //}
-
+        public static DateTime GetLastReset()
+        {
+            DateTime lastTuesday = DateTime.Now.AddDays(-1);
+            while (lastTuesday.DayOfWeek != DayOfWeek.Tuesday)
+            {
+                lastTuesday = lastTuesday.AddDays(-1);
+            }
+            return lastTuesday;
+        }
         [HttpGet("charData")]       
         public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string realm, string region)
         {
+            name = name.ToLower();
+            realm = realm.ToLower();
+            region = region.ToLower();
             return await _cache.GetOrAddAsync($"GetCharacterData_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
             {
                 FluentClient client = new();
@@ -284,7 +295,7 @@ namespace API.Controllers
                     dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
                 }
                 WoWCharacterMediaModel data = await client
-               .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name.ToLower()}/character-media?namespace=profile-us&locale=en_US&:region=us")
+               .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/character-media?namespace=profile-us&locale=en_US&:region=us")
                .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                .As<WoWCharacterMediaModel>();
 

@@ -87,7 +87,14 @@ console.log(count);
             mythic_plus_scores_by_season,
             mythic_plus_weekly_highest_level_runs
         },
-        classColor
+        classColor,
+        characterMedia: {
+            assets: [
+            { key: mediaType1, value: mediaUrl1 },
+            { key: mediaType2, value: mediaUrl2 },
+            { key: mediaType3, value: mediaUrl3 }
+            ]
+        }
     } = characterData;
 
     const renderRaidProgress = amirdrassilthedreamshope ? (
