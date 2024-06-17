@@ -39,7 +39,15 @@ else
     builder.Services.Configure<SettingsModel>(builder.Configuration.GetSection("ProdSettings"));
 
 }
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy",
+        builder => builder
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed((host) => true)
+            .AllowAnyHeader());
+});
 
 //builder.Services.AddSingleton<FluentClient>();
 var app = builder.Build();
@@ -58,10 +66,7 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 app.UseHttpsRedirection();
-app.UseCors(builder => builder
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader());
+app.UseCors("CorsPolicy");
 
 app.UseResponseCaching();
 
