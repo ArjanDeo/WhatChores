@@ -10,7 +10,6 @@ builder.Services.AddCors();
 builder.Services.AddControllers();
 
 builder.Services.AddSingleton<CachingService>();
-builder.Services.Configure<SettingsModel>(builder.Configuration.GetSection("Settings"));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -30,10 +29,15 @@ if(builder.Environment.IsDevelopment())
 {
     builder.Services.AddDbContext<WhatChoresDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DevConnection")));
-} else
+    builder.Services.Configure<SettingsModel>(builder.Configuration.GetSection("DevSettings"));
+
+}
+else
 {
     builder.Services.AddDbContext<WhatChoresDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("ProdConnection")));
+    builder.Services.Configure<SettingsModel>(builder.Configuration.GetSection("ProdSettings"));
+
 }
 
 
@@ -48,9 +52,11 @@ var app = builder.Build();
     {
         options.DefaultModelsExpandDepth(-1);
     });
-    app.UseDeveloperExceptionPage();
 //}
-
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 app.UseHttpsRedirection();
 app.UseCors(builder => builder
     .AllowAnyOrigin()

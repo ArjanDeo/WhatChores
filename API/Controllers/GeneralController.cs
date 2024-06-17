@@ -31,19 +31,13 @@ namespace API.Controllers
             _context = context;
             _cache = cache;
             _settings = settingsOptions.Value;
-           // whatChoresClient = new FluentClient(_settings.DevUrl);
-             whatChoresClient = new FluentClient(_settings.ProdUrl);           
+            whatChoresClient = new FluentClient(_settings.ApiUrl);           
             client = new FluentClient();
         }
     
 
         [HttpGet("realms")]
-        [SwaggerOperation(
-        Summary = "Gets Realms",
-        Description = "Gets all the realms in the specified region",
-        OperationId = "GetRealmData",
-        Tags = ["General", "Get"]
-        )]
+        [SwaggerOperation(Summary = "Gets Realms", Description = "Gets all the realms",OperationId = "GetRealmData", Tags = ["General", "Get"])]
         public async Task<List<RealmModel>> GetRealms()
         {
             var realmNames = await _context.tbl_USRealms
@@ -214,33 +208,7 @@ namespace API.Controllers
                 return Ok(ClearedBossList);
             });
         }
-        //[HttpGet("charMedia")]
-        //public async Task<WoWCharacterMediaModel> GetCharacterMedia(string name, string realm, string region)
-        //{
-        //    if (AppConstants.AccessToken == null)
-        //    {
-        //        Dictionary<string, string> AccessTokenPayload = new()
-        //        {
-        //            [":region"] = "us",
-        //            ["grant_type"] = "client_credentials"
-        //        };
-
-        //        AccessTokenModel Response = await client
-        //          .PostAsync("https://us.battle.net/oauth/token")
-        //          .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
-        //          .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
-        //          .As<AccessTokenModel>();
-
-        //        AppConstants.AccessToken = Response;
-        //    }
-
-        //    WoWCharacterMediaModel data = await client
-        //        .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name.ToLower()}/character-media?namespace=profile-us&locale=en_US&:region=us")
-        //        .WithBearerAuthentication(AppConstants.AccessToken.access_token)
-        //        .As<WoWCharacterMediaModel>();
-
-        //    return data;
-        //}
+       
         public static DateTime GetLastReset()
         {
             DateTime lastTuesday = DateTime.Now.AddDays(-1);

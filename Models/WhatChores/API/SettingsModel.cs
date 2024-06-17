@@ -2,8 +2,7 @@
 {
     public class SettingsModel
     {
-        public string DevUrl { get; set; }
-        public string ProdUrl { get; set; }
+        public string ApiUrl { get; set; }
 
     }
 }
