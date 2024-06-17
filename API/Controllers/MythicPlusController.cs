@@ -7,39 +7,59 @@ namespace API.Controllers
 {
     [Route("api/v1/mythicplus")]
     [ApiController]
-    public class MythicPlusController : ControllerBase
+    public class MythicPlusController(WhatChoresDbContext context) : ControllerBase
     {
-        private readonly WhatChoresDbContext _context;
+        private readonly WhatChoresDbContext _context = context;       
 
-        public MythicPlusController(WhatChoresDbContext context)
-        {
-            _context = context;
-        }
-
-        [HttpGet("vault-ilvl-by-keylevel")]       
+        [HttpGet("keystone-vault-reward")]
         public async Task<ActionResult<object>> Get(int? keyLevel)
         {
-            if (keyLevel.HasValue && (keyLevel < 2 || keyLevel > 20))
+            // Check for keyLevel less than 2
+            if (keyLevel.HasValue && keyLevel < 2)
             {
                 return BadRequest("Key level should be between 2 and 20.");
             }
 
-            IQueryable<tbl_MythicPlusValues> query = _context.tbl_MythicPlusValues;
+            int originalKeyLevel = keyLevel.GetValueOrDefault(); // Store the original input keyLevel
 
-            if (keyLevel != null)
+            // Adjust keyLevel if it's greater than 20
+            if (keyLevel.HasValue && keyLevel > 20)
             {
-                query = query.Where(k => k.KeyLevel == keyLevel);
+                keyLevel = 20;
             }
 
-            var data = await query.ToDictionaryAsync(k => "+" + k.KeyLevel, i => i.ItemLevel);
-            var formattedData = new
+            if (!keyLevel.HasValue)
             {
-                vaultIlvl = data,
-            };
+                // Return all key levels if keyLevel is null
+                var allRewards = await _context.tbl_MythicPlusValues
+                    .OrderBy(k => k.KeyLevel) // Assuming you want them ordered
+                    .ToDictionaryAsync(k => k.KeyLevel.ToString(), i => i.ItemLevel.ToString());
 
-            return Ok(formattedData);
+                return Ok(allRewards);
+            }
+            else
+            {
+                // Query for the specific or adjusted key level
+                var reward = await _context.tbl_MythicPlusValues
+                    .Where(k => k.KeyLevel == keyLevel)
+                    .Select(k => new { Key = k.KeyLevel.ToString(), Value = k.ItemLevel.ToString() })
+                    .FirstOrDefaultAsync();
+
+                if (reward == null)
+                {
+                    return NotFound($"No rewards found for key level {originalKeyLevel}.");
+                }
+
+                // Return in the specified format
+                var result = new Dictionary<string, string>
+        {
+            // Use originalKeyLevel in the response if it was greater than 20
+            { originalKeyLevel > 20 ? originalKeyLevel.ToString() : reward.Key, reward.Value }
+        };
+
+                return Ok(result);
+            }
         }
-
 
     }
 }
