@@ -143,39 +143,63 @@ namespace API.Controllers
 
                 Dictionary<string, DateTime> lastKilledTimestamps = [];
 
-                foreach (var expansion in data.expansions)
-                {
-                    
-                    foreach (var instance in expansion.instances)
-                    {
-                        
-                        foreach (var mode in instance.modes)
+                var responseEncounters = data.expansions
+                .SelectMany(e => e.instances)
+                .SelectMany(i => i.modes)
+                .SelectMany(m => m.progress.encounters);
+                List<string> validRaidBosses = new List<string>
                         {
-                            
-                            foreach (var encounter in mode.progress.encounters)
+                            "Eranog",
+                            "Terros",
+                            "Sennarth, the Cold Breath",
+                            "The Primal Council",
+                            "Dathea, Ascended",
+                            "Kurog Grimtotem",
+                            "Broodkeeper Diurna",
+                            "Raszageth the Storm Eater",
+                            "Kazzara, the Hellforged",
+                            "The Amalgamation Chamber",
+                            "The Forgotten Experiments",
+                            "Assault of the Zaqali",
+                            "Rashok, the Elder",
+                            "The Vigilant Steward, Zskarn",
+                            "Magmorax",
+                            "Echo of Neltharion",
+                            "Scalecommander Sarkareth",
+                            "Gnarlroot",
+                            "Igira the Cruel",
+                            "Volcoross",
+                            "Council of Dreams",
+                            "Larodar, Keeper of the Flame",
+                            "Nymue, Weaver of the Cycle",
+                            "Smolderon",
+                            "Tindral Sageswift, Seer of the Flame",
+                            "Fyrakk the Blazing"
+                        };
+
+                foreach (var encounter in responseEncounters)
+                {
+                    string bossName = encounter.encounter.name;
+                    long lastKillTimestamp = encounter.last_kill_timestamp;
+
+                    if (validRaidBosses.Contains(bossName))
+                    {
+                        DateTime lastKillDateTime = DateTimeOffset.FromUnixTimeMilliseconds(lastKillTimestamp).UtcDateTime;
+
+                        if (lastKilledTimestamps.TryGetValue(bossName, out DateTime value))
+                        {
+                            if (value < lastKillDateTime)
                             {
-                                string bossName = encounter.encounter.name;
-                                long lastKillTimestamp = encounter.last_kill_timestamp;
-
-                               
-                                DateTime lastKillDateTime = DateTimeOffset.FromUnixTimeMilliseconds(lastKillTimestamp).UtcDateTime;
-
-                                
-                                if (lastKilledTimestamps.TryGetValue(bossName, out DateTime value))
-                                {
-                                    if (value < lastKillDateTime)
-                                    {
-                                        lastKilledTimestamps[bossName] = lastKillDateTime;
-                                    }
-                                }
-                                else
-                                {
-                                    lastKilledTimestamps.Add(bossName, lastKillDateTime);
-                                }
+                                lastKilledTimestamps[bossName] = lastKillDateTime;
                             }
                         }
+                        else
+                        {
+                            lastKilledTimestamps.Add(bossName, lastKillDateTime);
+                        }
                     }
-                }               
+                    
+                }
                 string resultJson = JsonConvert.SerializeObject(lastKilledTimestamps, Formatting.Indented);
                 var seperatedRaids = new List<RaidModel>();
 
@@ -193,31 +217,17 @@ namespace API.Controllers
                 foreach (var encounter in encounters)
                 {
                     DateTime lastKillDateTime = encounter.LastKillTimestamp;
-
-
-                    //DateTime thisReset = DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek).AddDays(2).AddHours(15);
                     DateTime thisReset = GetLastReset();
 
                     if (lastKillDateTime > thisReset)
                     {
-                        // x.IsCleared = true;
                         ClearedBossList.Add(encounter.Boss);
                     }
                 }
 
                 return Ok(ClearedBossList);
             });
-        }
-       
-        public static DateTime GetLastReset()
-        {
-            DateTime lastTuesday = DateTime.Now.AddDays(-1);
-            while (lastTuesday.DayOfWeek != DayOfWeek.Tuesday)
-            {
-                lastTuesday = lastTuesday.AddDays(-1);
-            }
-            return lastTuesday;
-        }
+        }        
         [HttpGet("charData")]       
         public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string realm, string region)
         {
@@ -298,10 +308,10 @@ namespace API.Controllers
                 {
                     intList.Add(value);
                 }
-                else if (run.mythic_level > 20)
+                else if (run.mythic_level > 10)
                 {
-                    // If the key level is greater than 20, assign the maximum score
-                    intList.Add(mythicKeystoneValues[20]);
+                    // If the key level is greater than 10, assign the maximum score
+                    intList.Add(mythicKeystoneValues[10]);
                 }
             }
 
@@ -310,14 +320,12 @@ namespace API.Controllers
             return Task.FromResult(intList);
         }
         private async Task<string> GetClassColor(string char_class)
-        {
-           // FluentClient client = new();            
+        {                     
             List<ClassNameColor> classMap = await whatChoresClient
               .GetAsync("api/v1/general/class?getColor=true")
               .As<List<ClassNameColor>>();
            
             string color = "black"; // default
-
             
             foreach (var item in classMap)
             {
@@ -329,6 +337,15 @@ namespace API.Controllers
             }
 
             return color;
+        }
+        public static DateTime GetLastReset()
+        {
+            DateTime lastTuesday = DateTime.Now.AddDays(-1);
+            while (lastTuesday.DayOfWeek != DayOfWeek.Tuesday)
+            {
+                lastTuesday = lastTuesday.AddDays(-1);
+            }
+            return lastTuesday;
         }
     }
 }
