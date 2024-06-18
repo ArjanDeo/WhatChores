@@ -9,7 +9,8 @@ namespace Models.WhatChores.API
     public class RaidEncounter
     {
         public string Boss { get; set; }
-        public DateTime LastKillTimestamp { get; set; }
+        public string Difficulty { get; set; }
+       // public DateTime LastKillTimestamp { get; set; }
     }
 
     public class RaidModel

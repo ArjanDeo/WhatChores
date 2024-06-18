@@ -50,22 +50,7 @@ namespace API.Controllers
         [HttpGet("wowtoken")]       
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
-            if (AppConstants.AccessToken == null)
-            {
-               Dictionary<string,string> AccessTokenPayload = new()
-                {
-                    [":region"] = "us",
-                    ["grant_type"] = "client_credentials"
-                };
-
-                AccessTokenModel Response = await client
-                  .PostAsync("https://us.battle.net/oauth/token")
-                  .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
-                  .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
-                  .As<AccessTokenModel>();  
-                
-              AppConstants.AccessToken = Response;               
-            }
+           await GetNewAccessToken();
 
             Dictionary<string,string> ApiPayload = new()
             {
@@ -113,155 +98,95 @@ namespace API.Controllers
             }
         }
         [HttpGet("charRaids")]
-        public async Task<ActionResult<RaidModel>> GetCharacterRaids(string name, string realm, string region)
+        public async Task<ActionResult<List<RaidEncounter>>> GetCharacterRaids(string name, string realm, string region)
         {
             realm = realm.ToLower();
             name = name.ToLower();
             region = region.ToLower();
-            return await _cache.GetOrAddAsync($"GetCharacterRaids_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
-            {                
-                if (AppConstants.AccessToken == null)
-                {
-                    Dictionary<string, string> AccessTokenPayload = new()
-                    {
-                        [":region"] = "us",
-                        ["grant_type"] = "client_credentials"
-                    };
 
-                    AccessTokenModel Response = await client
-                      .PostAsync("https://us.battle.net/oauth/token")
-                      .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
-                      .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
-                      .As<AccessTokenModel>();
+            return await _cache.GetOrAddAsync($"GetCharacterRaids_{name}_{region}_{realm}", async () =>
+            {
+                await GetNewAccessToken();
 
-                    AppConstants.AccessToken = Response;
-                }
                 WoWCharacterRaidsModel data = await client
                     .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/encounters/raids?namespace=profile-us&locale=en_US")
                     .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                     .As<WoWCharacterRaidsModel>();
 
-                Dictionary<string, DateTime> lastKilledTimestamps = [];
+                Dictionary<string, (DateTime Timestamp, string Difficulty)> lastKilledTimestamps = [];
 
                 var responseEncounters = data.expansions
-                .SelectMany(e => e.instances)
-                .SelectMany(i => i.modes)
-                .SelectMany(m => m.progress.encounters);
-                List<string> validRaidBosses = new List<string>
-                        {
-                            "Eranog",
-                            "Terros",
-                            "Sennarth, the Cold Breath",
-                            "The Primal Council",
-                            "Dathea, Ascended",
-                            "Kurog Grimtotem",
-                            "Broodkeeper Diurna",
-                            "Raszageth the Storm Eater",
-                            "Kazzara, the Hellforged",
-                            "The Amalgamation Chamber",
-                            "The Forgotten Experiments",
-                            "Assault of the Zaqali",
-                            "Rashok, the Elder",
-                            "The Vigilant Steward, Zskarn",
-                            "Magmorax",
-                            "Echo of Neltharion",
-                            "Scalecommander Sarkareth",
-                            "Gnarlroot",
-                            "Igira the Cruel",
-                            "Volcoross",
-                            "Council of Dreams",
-                            "Larodar, Keeper of the Flame",
-                            "Nymue, Weaver of the Cycle",
-                            "Smolderon",
-                            "Tindral Sageswift, Seer of the Flame",
-                            "Fyrakk the Blazing"
-                        };
+                    .SelectMany(e => e.instances)
+                    .SelectMany(i => i.modes);
+
+                List<string> validRaidBosses = await _context.tbl_VaultRaidBosses
+                    .Select(v => v.Boss)
+                    .ToListAsync();
 
                 foreach (var encounter in responseEncounters)
                 {
-                    string bossName = encounter.encounter.name;
-                    long lastKillTimestamp = encounter.last_kill_timestamp;
-
-                    if (validRaidBosses.Contains(bossName))
+                    string difficultyLevel = encounter.difficulty.name;
+                    foreach (var xx in encounter.progress.encounters)
                     {
-                        DateTime lastKillDateTime = DateTimeOffset.FromUnixTimeMilliseconds(lastKillTimestamp).UtcDateTime;
+                        string bossName = xx.encounter.name;
+                        long lastKillTimestamp = xx.last_kill_timestamp;
 
-                        if (lastKilledTimestamps.TryGetValue(bossName, out DateTime value))
+                        if (validRaidBosses.Contains(bossName))
                         {
-                            if (value < lastKillDateTime)
+                            DateTime lastKillDateTime = DateTimeOffset.FromUnixTimeMilliseconds(lastKillTimestamp).UtcDateTime;
+
+                            if (lastKilledTimestamps.TryGetValue(bossName, out var existingEntry))
                             {
-                                lastKilledTimestamps[bossName] = lastKillDateTime;
+                                if (existingEntry.Timestamp < lastKillDateTime)
+                                {
+                                    lastKilledTimestamps[bossName] = (lastKillDateTime, difficultyLevel);
+                                }
+                            }
+                            else
+                            {
+                                lastKilledTimestamps[bossName] = (lastKillDateTime, difficultyLevel);
                             }
                         }
-                        else
-                        {
-                            lastKilledTimestamps.Add(bossName, lastKillDateTime);
-                        }
                     }
-                    
                 }
-                string resultJson = JsonConvert.SerializeObject(lastKilledTimestamps, Formatting.Indented);
-                var seperatedRaids = new List<RaidModel>();
 
-                List<RaidEncounter> encounters = [];
+                List<RaidEncounter> clearedBossList = new List<RaidEncounter>();
 
                 foreach (var entry in lastKilledTimestamps)
                 {
-                    encounters.Add(new RaidEncounter
+                    if (entry.Value.Timestamp > GetLastReset())
                     {
-                        Boss = entry.Key,
-                        LastKillTimestamp = entry.Value
-                    });
-                }
-                List<string> ClearedBossList = new();
-                foreach (var encounter in encounters)
-                {
-                    DateTime lastKillDateTime = encounter.LastKillTimestamp;
-                    DateTime thisReset = GetLastReset();
-
-                    if (lastKillDateTime > thisReset)
-                    {
-                        ClearedBossList.Add(encounter.Boss);
+                        clearedBossList.Add(new RaidEncounter
+                        {
+                            Boss = entry.Key,
+                            Difficulty = entry.Value.Difficulty
+                        });
                     }
                 }
 
-                return Ok(ClearedBossList);
+                return Ok(clearedBossList);
             });
-        }        
+        }
         [HttpGet("charData")]       
         public async Task<ActionResult<CharacterLookupModel>> GetCharacterData(string name, string realm, string region)
         {
             name = name.ToLower();
             realm = realm.ToLower();
             region = region.ToLower();
+           
             return await _cache.GetOrAddAsync($"GetCharacterData_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
-            {
-                FluentClient client = new();
-                if (AppConstants.AccessToken == null)
-                {
-                    Dictionary<string, string> AccessTokenPayload = new()
-                    {
-                        [":region"] = "us",
-                        ["grant_type"] = "client_credentials"
-                    };
+            {              
+                await GetNewAccessToken();
 
-                    AccessTokenModel Response = await client
-                      .PostAsync("https://us.battle.net/oauth/token")
-                      .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
-                      .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
-                      .As<AccessTokenModel>();
-
-                    AppConstants.AccessToken = Response;
-                }
-                CharacterLookupModel characterLookupModel = new();
-                RaiderIOCharacterDataModel ResponseData = await client
-                      .GetAsync("https://raider.io/api/v1/characters/profile")
-                      .WithArgument("region", region)
-                      .WithArgument("name", name)
-                      .WithArgument("realm", realm.Replace(" ", "-"))
-                      .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,mythic_plus_scores_by_season:current,guild,gear")
-                      .As<RaiderIOCharacterDataModel>();
-
+                CharacterLookupModel characterLookupModel = new();                
+                    RaiderIOCharacterDataModel ResponseData = await client
+                          .GetAsync("https://raider.io/api/v1/characters/profile")
+                          .WithArgument("region", region)
+                          .WithArgument("name", name)
+                          .WithArgument("realm", realm.Replace(" ", "-"))
+                          .WithArgument("fields", "raid_progression,mythic_plus_weekly_highest_level_runs,mythic_plus_scores_by_season:current,guild,gear")
+                          .As<RaiderIOCharacterDataModel>();
+                 
                 Dictionary<string, string> KeysData = await whatChoresClient
                     .GetAsync($"api/v1/mythicplus/keystone-vault-reward")
                     .As<Dictionary<string, string>>();
@@ -278,11 +203,10 @@ namespace API.Controllers
                .As<WoWCharacterMediaModel>();
 
                 characterLookupModel.CharacterMedia = data;
-                characterLookupModel.MythicKeystoneValues = dictionary;
                 characterLookupModel.RaiderIOCharacterData = ResponseData;
 
-                List<int> intList = await GetDungeonVaultSlots(ResponseData, characterLookupModel.MythicKeystoneValues);
-                characterLookupModel.DungeonVaultSlots = intList;
+                List<int> dungeonVaultSlotsList = await GetDungeonVaultSlots(ResponseData, dictionary);
+                characterLookupModel.DungeonVaultSlots = dungeonVaultSlotsList;
 
                 string color = await GetClassColor(characterLookupModel.RaiderIOCharacterData.char_class);
                 characterLookupModel.classColor = color;
@@ -346,6 +270,34 @@ namespace API.Controllers
                 lastTuesday = lastTuesday.AddDays(-1);
             }
             return lastTuesday;
+        }
+        private async Task<bool> GetNewAccessToken()
+        {
+            if (AppConstants.AccessToken != null)
+            {
+                return true;
+            }
+            Dictionary<string, string> AccessTokenPayload = new()
+            {
+                [":region"] = "us",
+                ["grant_type"] = "client_credentials"
+            };
+
+            AccessTokenModel Response = await client
+              .PostAsync("https://us.battle.net/oauth/token")
+              .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
+              .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
+              .As<AccessTokenModel>();
+
+            if (Response != null && Response.access_token != null)
+            {
+                AppConstants.AccessToken = Response;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
