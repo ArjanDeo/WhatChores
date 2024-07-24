@@ -1,6 +1,9 @@
-@API_HostAddress = http://localhost:5053
+@API_HostAddress = https://localhost:7031
 
-GET {{API_HostAddress}}/weatherforecast/
+### Realms
+GET {{API_HostAddress}}/api/v1/general/realms
 Accept: application/json
 
-###
+### Character Data
+GET {{API_HostAddress}}/api/v1/general/charData?name=Rekami&realm=frostmourne&region=us
+Accept: application/json

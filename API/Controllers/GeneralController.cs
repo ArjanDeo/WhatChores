@@ -1,5 +1,6 @@
 ﻿using DataAccess;
 using DataAccess.Tables;
+using HtmlAgilityPack;
 using LazyCache;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ using Models.WhatChores.API;
 using Newtonsoft.Json;
 using Pathoschild.Http.Client;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Xml;
 
 namespace API.Controllers
 {
@@ -26,6 +28,7 @@ namespace API.Controllers
         private readonly SettingsModel _settings;
         private readonly FluentClient whatChoresClient;
         private readonly FluentClient client;
+        private readonly HtmlDocument doc;
         public GeneralController(WhatChoresDbContext context, CachingService cache, IOptions<SettingsModel> settingsOptions) 
         {
             _context = context;
@@ -33,6 +36,7 @@ namespace API.Controllers
             _settings = settingsOptions.Value;
             whatChoresClient = new FluentClient(_settings.ApiUrl);           
             client = new FluentClient();
+            doc = new();
         }
     
 
@@ -50,31 +54,36 @@ namespace API.Controllers
         [HttpGet("wowtoken")]       
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
-           await GetNewAccessToken();
-
-            Dictionary<string,string> ApiPayload = new()
+            return await _cache.GetOrAddAsync<ActionResult<WoWTokenPriceModel>>("GetToken", async () => 
             {
-                ["region"] = "us",
-                ["namespace"] = "dynamic-us",
-                ["locale"] = "en_US"
-            };
 
-            WoWTokenPriceModel ResponseData = await client
-                .GetAsync("https://us.api.blizzard.com/data/wow/token/index")
-                .WithOptions(ignoreHttpErrors: true)
-                .WithArguments(ApiPayload)
-                .WithBearerAuthentication(AppConstants.AccessToken.access_token)
-                .As<WoWTokenPriceModel>();
+                await GetNewAccessToken();
+
+                Dictionary<string, string> ApiPayload = new()
+                {
+                    ["region"] = "us",
+                    ["namespace"] = "dynamic-us",
+                    ["locale"] = "en_US"
+                };
+
+                WoWTokenPriceModel ResponseData = await client
+                    .GetAsync("https://us.api.blizzard.com/data/wow/token/index")
+                    .WithOptions(ignoreHttpErrors: true)
+                    .WithArguments(ApiPayload)
+                    .WithBearerAuthentication(AppConstants.AccessToken.access_token)
+                    .As<WoWTokenPriceModel>();
 
 
-            //   WoWTokenPriceModel ResponseDataModel = await ResponseData.As<WoWTokenPriceModel>();
+                //   WoWTokenPriceModel ResponseDataModel = await ResponseData.As<WoWTokenPriceModel>();
 
-            // The price of wow token is, for some reason, returned with unnecessary 0's at the end (e.g. 360541000)
-            // So here I divide it by 10000 to remove the last 3, then add comma separators for visibility.
-            // This will need to be changed in the extremely unlikely event that the token reaches prices of over 1 million or less than 100 thousand.
-            ResponseData.price /= 10000;
+                // The price of wow token is, for some reason, returned with unnecessary 0's at the end (e.g. 360541000)
+                // So here I divide it by 10000 to remove the last 3, then add comma separators for visibility.
+                // This will need to be changed in the extremely unlikely event that the token reaches prices of over 1 million or less than 100 thousand.
+                ResponseData.price /= 10000;
 
-            return Ok(ResponseData);
+                return Ok(ResponseData);
+            });
+           
 
         }
         [HttpGet("class")]
@@ -216,6 +225,45 @@ namespace API.Controllers
                 return Ok(characterLookupModel);
             });
            
+        }
+        [HttpGet("wowNews")]
+        public async Task<ActionResult<List<NewsModel>>> GetWoWNews()
+        {
+            return await _cache.GetOrAddAsync<ActionResult<List<NewsModel>>>("GetWoWNews", async () =>
+            {
+                var newsPage = await client.GetAsync("https://news.blizzard.com/en-gb/world-of-warcraft").AsString();
+
+                doc.LoadHtml(newsPage);
+
+                var ol = doc.DocumentNode.SelectSingleNode("//ol[@class='ArticleList']");
+
+                HtmlNodeCollection liNodes = ol.SelectNodes(".//li");
+                List<NewsModel> newsPosts = [];
+
+                if (liNodes is not null)
+                {
+                    foreach (HtmlNode node in liNodes)
+                    {
+                        NewsModel news = new NewsModel();
+                        // string title = node.SelectSingleNode(".//h2/a")?.InnerText.Trim();                    
+                        string backgroundImageStyle = node.SelectSingleNode(".//div[@class='ArticleListItem-image']")?.Attributes["style"]?.Value;
+                        news.Image = backgroundImageStyle;
+                        int startIndex = news.Image.IndexOf("url(") + 4;
+                        int endIndex = news.Image.LastIndexOf(")");
+                        string extractedUrl = news.Image[startIndex..endIndex];
+
+                        news.Image = "https:" + extractedUrl;
+                        news.Title = node.SelectSingleNode(".//h2/a")?.InnerText.Trim();
+                        news.Link = node.SelectSingleNode(".//h2/a")?.Attributes["href"]?.Value;
+                        news.Description = node.SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
+                        newsPosts.Add(news);
+                    }
+                    client.Dispose();
+
+                    return Ok(newsPosts);
+                }
+                return NotFound();
+            });
         }
         public class ClassNameColor
         {

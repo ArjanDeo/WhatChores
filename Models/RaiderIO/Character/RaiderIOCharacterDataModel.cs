@@ -380,7 +380,7 @@ namespace Models.RaiderIO.Character
 
     public class Spec3
     {
-        public int score { get; set; }
+        public double score { get; set; }
         public string color { get; set; }
     }
 
