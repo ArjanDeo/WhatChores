@@ -227,9 +227,9 @@ namespace API.Controllers
            
         }
         [HttpGet("wowNews")]
-        public async Task<ActionResult<List<NewsModel>>> GetWoWNews()
+        public async Task<ActionResult<List<NewsModel>>> GetWoWNews(int limit)
         {
-            return await _cache.GetOrAddAsync<ActionResult<List<NewsModel>>>("GetWoWNews", async () =>
+            return await _cache.GetOrAddAsync<ActionResult<List<NewsModel>>>($"GetWoWNews_{limit}", async () =>
             {
                 var newsPage = await client.GetAsync("https://news.blizzard.com/en-gb/world-of-warcraft").AsString();
 
@@ -242,20 +242,20 @@ namespace API.Controllers
 
                 if (liNodes is not null)
                 {
-                    foreach (HtmlNode node in liNodes)
+                    for (int node = 0; node < limit; node++ )
                     {
                         NewsModel news = new NewsModel();
                         // string title = node.SelectSingleNode(".//h2/a")?.InnerText.Trim();                    
-                        string backgroundImageStyle = node.SelectSingleNode(".//div[@class='ArticleListItem-image']")?.Attributes["style"]?.Value;
+                        string backgroundImageStyle = liNodes[node].SelectSingleNode(".//div[@class='ArticleListItem-image']")?.Attributes["style"]?.Value;
                         news.Image = backgroundImageStyle;
                         int startIndex = news.Image.IndexOf("url(") + 4;
                         int endIndex = news.Image.LastIndexOf(")");
                         string extractedUrl = news.Image[startIndex..endIndex];
 
                         news.Image = "https:" + extractedUrl;
-                        news.Title = node.SelectSingleNode(".//h2/a")?.InnerText.Trim();
-                        news.Link = node.SelectSingleNode(".//h2/a")?.Attributes["href"]?.Value;
-                        news.Description = node.SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
+                        news.Title = liNodes[node].SelectSingleNode(".//h2/a")?.InnerText.Trim();
+                        news.Link = liNodes[node].SelectSingleNode(".//h2/a")?.Attributes["href"]?.Value;
+                        news.Description = liNodes[node].SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
                         newsPosts.Add(news);
                     }
                     client.Dispose();
@@ -263,7 +263,7 @@ namespace API.Controllers
                     return Ok(newsPosts);
                 }
                 return NotFound();
-            });
+            }, DateTimeOffset.Now.AddHours(1));
         }
         public class ClassNameColor
         {
