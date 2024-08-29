@@ -3,6 +3,7 @@ using LazyCache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Models.WhatChores.API;
+using Pathoschild.Http.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -49,7 +50,15 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader());
 });
 
-//builder.Services.AddSingleton<FluentClient>();
+builder.Services.AddSingleton<FluentClient>();
+
+builder.Services.AddAuthentication()
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://localhost:5001";
+        options.TokenValidationParameters.ValidateAudience = false;
+    });
+builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

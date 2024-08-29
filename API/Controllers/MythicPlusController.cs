@@ -1,38 +1,39 @@
 ﻿using DataAccess;
-using DataAccess.Tables;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Models.BattleNet.Public.Character.MythicKeystone;
+using Models.Constants;
+using Pathoschild.Http.Client;
 
 namespace API.Controllers
 {
-    [Route("api/v1/mythicplus")]
+    [Route("api/v1/[controller]/[action]")]
     [ApiController]
-    public class MythicPlusController(WhatChoresDbContext context) : ControllerBase
+    public class MythicPlusController(WhatChoresDbContext context, FluentClient client) : ControllerBase
     {
         private readonly WhatChoresDbContext _context = context;       
-
+        private readonly FluentClient _client = client;
         [HttpGet("keystone-vault-reward")]
-        public async Task<ActionResult<object>> Get(int? keyLevel)
+        public async Task<ActionResult<object>> KeystoneVaultReward(int? keyLevel)
         {
             // Check for keyLevel less than 2
             if (keyLevel.HasValue && keyLevel < 2)
             {
-                return BadRequest("Key level should be between 2 and 20.");
+                return BadRequest("Key level should be at least 2.");
             }
 
-            int originalKeyLevel = keyLevel.GetValueOrDefault(); // Store the original input keyLevel
+            int originalKeyLevel = keyLevel.GetValueOrDefault();
 
-            // Adjust keyLevel if it's greater than 20
-            if (keyLevel.HasValue && keyLevel > 20)
+            // Adjust keyLevel if it's greater than 10
+            if (keyLevel.HasValue && keyLevel > 10)
             {
-                keyLevel = 20;
+                keyLevel = 10;
             }
 
             if (!keyLevel.HasValue)
             {
-                // Return all key levels if keyLevel is null
                 var allRewards = await _context.tbl_MythicPlusValues
-                    .OrderBy(k => k.KeyLevel) // Assuming you want them ordered
+                    .OrderBy(k => k.KeyLevel)
                     .ToDictionaryAsync(k => k.KeyLevel.ToString(), i => i.ItemLevel.ToString());
 
                 return Ok(allRewards);
@@ -49,17 +50,26 @@ namespace API.Controllers
                 {
                     return NotFound($"No rewards found for key level {originalKeyLevel}.");
                 }
-
-                // Return in the specified format
+               
                 var result = new Dictionary<string, string>
-        {
-            // Use originalKeyLevel in the response if it was greater than 20
-            { originalKeyLevel > 20 ? originalKeyLevel.ToString() : reward.Key, reward.Value }
-        };
+                {            
+                    { originalKeyLevel > 10 ? originalKeyLevel.ToString() : reward.Key, reward.Value }
+                };
 
                 return Ok(result);
             }
         }
-
+        [HttpGet]
+        public async Task<IActionResult> CharacterRunsLibrary(string name, string realm, string region)
+        {
+            WoWCharacterMythicKeystoneModel data = await _client.
+                GetAsync($"https://us.api.blizzard.com/profile/wow/character/{realm}/{name}/mythic-keystone-profile")
+                .WithArgument("namespace", "profile-us")
+                .WithArgument("locale", "en_US")
+                .WithArgument(":region", region)
+                .WithBearerAuthentication(AppConstants.AccessToken.access_token)
+                .As<WoWCharacterMythicKeystoneModel>();
+            return Ok(data);
+        }
     }
 }

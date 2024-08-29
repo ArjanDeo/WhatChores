@@ -2,6 +2,7 @@
 using DataAccess.Tables;
 using HtmlAgilityPack;
 using LazyCache;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -15,7 +16,9 @@ using Models.WhatChores.API;
 using Newtonsoft.Json;
 using Pathoschild.Http.Client;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Net;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace API.Controllers
 {
@@ -50,7 +53,36 @@ namespace API.Controllers
 
             return realmNames;
         }
-
+        [HttpGet("pingCharacter")]
+        public async Task<ActionResult> PingCharacter(string name, string realm)
+        {
+            return await _cache.GetOrAddAsync<ActionResult>($"PingCharacter_{realm}_{name}", async () =>
+            {
+                try
+                {
+                    RaiderIOCharacterDataModel data = await client
+                          .GetAsync("https://raider.io/api/v1/characters/profile")
+                          .WithArgument("region", "us")
+                          .WithArgument("name", name)
+                          .WithArgument("realm", realm.Replace(" ", "-"))
+                          .As<RaiderIOCharacterDataModel>();
+                    return Ok();
+                } catch (ApiException ex)
+                {
+                    switch (ex.Response.Status)
+                    {
+                        case HttpStatusCode.BadRequest:
+                            return BadRequest("Could not find requested character.");
+                        case HttpStatusCode.Forbidden:
+                            return Forbid("Access is forbidden.");
+                        case HttpStatusCode.NotFound:
+                            return NotFound("Endpoint not found.");
+                        default: 
+                            return BadRequest("Could not find requested character.");
+                    }
+                }
+            });
+        }
         [HttpGet("wowtoken")]       
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
@@ -77,7 +109,7 @@ namespace API.Controllers
                 //   WoWTokenPriceModel ResponseDataModel = await ResponseData.As<WoWTokenPriceModel>();
 
                 // The price of wow token is, for some reason, returned with unnecessary 0's at the end (e.g. 360541000)
-                // So here I divide it by 10000 to remove the last 3, then add comma separators for visibility.
+                // So here I divide it by 10000 to remove the last 3.
                 // This will need to be changed in the extremely unlikely event that the token reaches prices of over 1 million or less than 100 thousand.
                 ResponseData.price /= 10000;
 
@@ -135,10 +167,10 @@ namespace API.Controllers
                 foreach (var encounter in responseEncounters)
                 {
                     string difficultyLevel = encounter.difficulty.name;
-                    foreach (var xx in encounter.progress.encounters)
+                    foreach (var boss in encounter.progress.encounters)
                     {
-                        string bossName = xx.encounter.name;
-                        long lastKillTimestamp = xx.last_kill_timestamp;
+                        string bossName = boss.encounter.name;
+                        long lastKillTimestamp = boss.last_kill_timestamp;
 
                         if (validRaidBosses.Contains(bossName))
                         {
@@ -159,7 +191,7 @@ namespace API.Controllers
                     }
                 }
 
-                List<RaidEncounter> clearedBossList = new List<RaidEncounter>();
+                List<RaidEncounter> clearedBossList = [];
 
                 foreach (var entry in lastKilledTimestamps)
                 {
@@ -197,7 +229,7 @@ namespace API.Controllers
                           .As<RaiderIOCharacterDataModel>();
                  
                 Dictionary<string, string> KeysData = await whatChoresClient
-                    .GetAsync($"api/v1/mythicplus/keystone-vault-reward")
+                    .GetAsync($"api/v1/mythicplus/KeystoneVaultReward/keystone-vault-reward")
                     .As<Dictionary<string, string>>();
 
                 var dictionary = new Dictionary<int, int>();
@@ -240,7 +272,7 @@ namespace API.Controllers
                 HtmlNodeCollection liNodes = ol.SelectNodes(".//li");
                 List<NewsModel> newsPosts = [];
 
-                if (liNodes is not null)
+                if (liNodes is not null && limit is not 0)
                 {
                     for (int node = 0; node < limit; node++ )
                     {
@@ -251,16 +283,44 @@ namespace API.Controllers
                         int startIndex = news.Image.IndexOf("url(") + 4;
                         int endIndex = news.Image.LastIndexOf(")");
                         string extractedUrl = news.Image[startIndex..endIndex];
+                        string link = liNodes[node].SelectSingleNode(".//h2/a")?.Attributes["href"]?.Value;
+
+                        link = link.Replace("world-of-warcraft", "news");
+                        link = "https://worldofwarcraft.blizzard.com" + link;
 
                         news.Image = "https:" + extractedUrl;
                         news.Title = liNodes[node].SelectSingleNode(".//h2/a")?.InnerText.Trim();
-                        news.Link = liNodes[node].SelectSingleNode(".//h2/a")?.Attributes["href"]?.Value;
+                        news.Link = link;
                         news.Description = liNodes[node].SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
                         newsPosts.Add(news);
                     }
                     client.Dispose();
 
                     return Ok(newsPosts);
+                } else if (liNodes is not null)
+                {
+                    foreach (var node in liNodes)
+                    {
+                        NewsModel news = new NewsModel();
+                        // string title = node.SelectSingleNode(".//h2/a")?.InnerText.Trim();                    
+                        string backgroundImageStyle = node.SelectSingleNode(".//div[@class='ArticleListItem-image']")?.Attributes["style"]?.Value;
+                        news.Image = backgroundImageStyle;
+                        int startIndex = news.Image.IndexOf("url(") + 4;
+                        int endIndex = news.Image.LastIndexOf(")");
+                        string extractedUrl = news.Image[startIndex..endIndex];
+                        string link = node.SelectSingleNode(".//h2/a")?.Attributes["href"]?.Value;
+
+                        link = link.Replace("world-of-warcraft", "news");
+                        link = "https://worldofwarcraft.blizzard.com" + link;
+
+                        news.Image = "https:" + extractedUrl;
+                        news.Title = node.SelectSingleNode(".//h2/a")?.InnerText.Trim();
+                        news.Link = link;
+                        news.Description = node.SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
+                        newsPosts.Add(news);
+                    }
+                    return Ok(newsPosts);
+                   
                 }
                 return NotFound();
             }, DateTimeOffset.Now.AddHours(1));
