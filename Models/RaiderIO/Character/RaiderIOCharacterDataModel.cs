@@ -2,14 +2,14 @@
 
 namespace Models.RaiderIO.Character
 {    
-    public class AberrusTheShadowedCrucible
-    {
-        public string summary { get; set; }
-        public int total_bosses { get; set; }
-        public int normal_bosses_killed { get; set; }
-        public int heroic_bosses_killed { get; set; }
-        public int mythic_bosses_killed { get; set; }
-    }
+    //public class AberrusTheShadowedCrucible
+    //{
+    //    public string summary { get; set; }
+    //    public int total_bosses { get; set; }
+    //    public int normal_bosses_killed { get; set; }
+    //    public int heroic_bosses_killed { get; set; }
+    //    public int mythic_bosses_killed { get; set; }
+    //}
 
     public class Affix
     {
@@ -20,14 +20,14 @@ namespace Models.RaiderIO.Character
         public string wowhead_url { get; set; }
     }
 
-    public class AmirdrassilTheDreamsHope
-    {
-        public string summary { get; set; }
-        public int total_bosses { get; set; }
-        public int normal_bosses_killed { get; set; }
-        public int heroic_bosses_killed { get; set; }
-        public int mythic_bosses_killed { get; set; }
-    }
+    //public class AmirdrassilTheDreamsHope
+    //{
+    //    public string summary { get; set; }
+    //    public int total_bosses { get; set; }
+    //    public int normal_bosses_killed { get; set; }
+    //    public int heroic_bosses_killed { get; set; }
+    //    public int mythic_bosses_killed { get; set; }
+    //}
 
     public class AzeritePower
     {
@@ -242,7 +242,14 @@ namespace Models.RaiderIO.Character
         public List<Affix> affixes { get; set; }
         public string url { get; set; }
     }
-
+    public class NerubarPalace
+    {
+        public string summary { get; set; }
+        public int total_bosses { get; set; }
+        public int normal_bosses_killed { get; set; }
+        public int heroic_bosses_killed { get; set; }
+        public int mythic_bosses_killed { get; set; }
+    }
     public class Neck
     {
         public int item_id { get; set; }
@@ -277,14 +284,13 @@ namespace Models.RaiderIO.Character
 
     public class RaidProgression
     {
-        [JsonProperty("aberrus-the-shadowed-crucible")]
-        public AberrusTheShadowedCrucible aberrustheshadowedcrucible { get; set; }
+        [JsonProperty("nerubar-palace")]
+        public NerubarPalace nerubarpalace { get; set; }
 
-        [JsonProperty("amirdrassil-the-dreams-hope")]
-        public AmirdrassilTheDreamsHope amirdrassilthedreamshope { get; set; }
-
-        [JsonProperty("vault-of-the-incarnates")]
-        public VaultOfTheIncarnates vaultoftheincarnates { get; set; }
+      //  [JsonProperty("amirdrassil-the-dreams-hope")]
+      //  public AmirdrassilTheDreamsHope amirdrassilthedreamshope { get; set; }
+      //  [JsonProperty("vault-of-the-incarnates")]
+      //  public VaultOfTheIncarnates vaultoftheincarnates { get; set; }
     }
     public class All
     {
@@ -447,14 +453,14 @@ namespace Models.RaiderIO.Character
         public List<int> bonuses { get; set; }
     }
 
-    public class VaultOfTheIncarnates
-    {
-        public string summary { get; set; }
-        public int total_bosses { get; set; }
-        public int normal_bosses_killed { get; set; }
-        public int heroic_bosses_killed { get; set; }
-        public int mythic_bosses_killed { get; set; }
-    }
+    //public class VaultOfTheIncarnates
+    //{
+    //    public string summary { get; set; }
+    //    public int total_bosses { get; set; }
+    //    public int normal_bosses_killed { get; set; }
+    //    public int heroic_bosses_killed { get; set; }
+    //    public int mythic_bosses_killed { get; set; }
+    //}
 
     public class Waist
     {
