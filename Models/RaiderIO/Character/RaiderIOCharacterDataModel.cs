@@ -45,10 +45,10 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
-        public List<object> gems { get; set; }
+//         public List<object> azerite_powers { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -63,9 +63,9 @@ namespace Models.RaiderIO.Character
         public bool is_azerite_armor { get; set; }
         public List<AzeritePower> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public string tier { get; set; }
-        public List<object> gems { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -75,7 +75,7 @@ namespace Models.RaiderIO.Character
         public int resisted { get; set; }
         public int total { get; set; }
         public int cloakRank { get; set; }
-        public List<object> spells { get; set; }
+      //  public List<object> spells { get; set; }
     }
 
     public class Feet
@@ -87,10 +87,10 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
-        public List<object> gems { get; set; }
+//         public List<object> azerite_powers { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -103,9 +103,9 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
@@ -119,9 +119,9 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
@@ -150,11 +150,11 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public string tier { get; set; }
-        public List<object> gems { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -167,9 +167,9 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
@@ -203,11 +203,11 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public string tier { get; set; }
-        public List<object> gems { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -220,10 +220,10 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
-        public List<object> gems { get; set; }
+//         public List<object> azerite_powers { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -252,9 +252,9 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
@@ -268,10 +268,10 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
-        public List<object> gems { get; set; }
+//         public List<object> azerite_powers { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -400,9 +400,9 @@ namespace Models.RaiderIO.Character
         public bool is_azerite_armor { get; set; }
         public List<AzeritePower> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public string tier { get; set; }
-        public List<object> gems { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -412,7 +412,7 @@ namespace Models.RaiderIO.Character
         public int school { get; set; }
         public string icon { get; set; }
         public string name { get; set; }
-        public object rank { get; set; }
+      //  public object rank { get; set; }
     }
 
     public class Trinket1
@@ -424,10 +424,10 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
-        public List<object> gems { get; set; }
+//         public List<object> azerite_powers { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -440,10 +440,10 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
-        public List<object> gems { get; set; }
+//         public List<object> azerite_powers { get; set; }
+        public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
 
@@ -465,9 +465,9 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }
@@ -481,9 +481,9 @@ namespace Models.RaiderIO.Character
         public int item_quality { get; set; }
         public bool is_legendary { get; set; }
         public bool is_azerite_armor { get; set; }
-        public List<object> azerite_powers { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public Corruption corruption { get; set; }
-        public List<object> domination_shards { get; set; }
+//         public List<object> azerite_powers { get; set; }
         public List<int> gems { get; set; }
         public List<int> bonuses { get; set; }
     }

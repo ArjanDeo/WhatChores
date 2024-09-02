@@ -34,7 +34,7 @@ namespace API.Controllers
             {
                 var allRewards = await _context.tbl_MythicPlusValues
                     .OrderBy(k => k.KeyLevel)
-                    .ToDictionaryAsync(k => k.KeyLevel.ToString(), i => i.ItemLevel.ToString());
+                    .ToDictionaryAsync(k => k.KeyLevel, i => i.ItemLevel);
 
                 return Ok(allRewards);
             }
@@ -43,7 +43,7 @@ namespace API.Controllers
                 // Query for the specific or adjusted key level
                 var reward = await _context.tbl_MythicPlusValues
                     .Where(k => k.KeyLevel == keyLevel)
-                    .Select(k => new { Key = k.KeyLevel.ToString(), Value = k.ItemLevel.ToString() })
+                    .Select(k => new { Key = k.KeyLevel, Value = k.ItemLevel })
                     .FirstOrDefaultAsync();
 
                 if (reward == null)
@@ -51,9 +51,9 @@ namespace API.Controllers
                     return NotFound($"No rewards found for key level {originalKeyLevel}.");
                 }
                
-                var result = new Dictionary<string, string>
+                var result = new Dictionary<int, int>
                 {            
-                    { originalKeyLevel > 10 ? originalKeyLevel.ToString() : reward.Key, reward.Value }
+                    { originalKeyLevel > 10 ? originalKeyLevel : reward.Key, reward.Value }
                 };
 
                 return Ok(result);

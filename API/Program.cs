@@ -52,13 +52,6 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSingleton<FluentClient>();
 
-builder.Services.AddAuthentication()
-    .AddJwtBearer(options =>
-    {
-        options.Authority = "https://localhost:5001";
-        options.TokenValidationParameters.ValidateAudience = false;
-    });
-builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

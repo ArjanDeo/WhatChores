@@ -15,6 +15,7 @@ namespace DataAccess
         public DbSet<tbl_MythicPlusValues> tbl_MythicPlusValues { get; set; }
         public DbSet<tbl_ClassData> tbl_ClassData { get; set; }
         public DbSet<tbl_VaultRaidBosses> tbl_VaultRaidBosses { get; set; }
+        public DbSet<tbl_Characters> tbl_Characters { get; set; }
 
         #endregion
     }
