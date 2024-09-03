@@ -54,10 +54,8 @@ namespace API.Controllers
             return realmNames;
         }
         [HttpGet("pingApi")]
-        public ActionResult PingApi()
-        {
-            return Ok("Api is active.");
-        }
+        public ActionResult PingApi() => Ok("Api is active.");
+        
         [HttpGet("updateCharacter")]
         public async Task<HttpStatusCode> UpdateCharacter(string name, string realm, string region)
         {
@@ -274,7 +272,7 @@ namespace API.Controllers
 
                         raiderIOCharacterDataModel = await raiderIOCharacterData.As<RaiderIOCharacterDataModel>();
                     }
-                    else if (character.LastUpdatedAt >= DateTime.UtcNow.AddDays(1)) // Needs updating
+                    else if (character.LastUpdatedAt >= DateTime.UtcNow.AddDays(1)) // character needs updating
                     {
                         var raiderIOCharacterData = await client
                             .GetAsync("https://raider.io/api/v1/characters/profile")
@@ -478,25 +476,33 @@ namespace API.Controllers
                 [":region"] = "us",
                 ["grant_type"] = "client_credentials"
             };
-           var clientId = _configuration.GetSection("OAuthCredentials:BattleNet:ClientId").Value;
-           var clientSecret = _configuration.GetSection("OAuthCredentials:BattleNet:ClientSecret").Value;
-            AccessTokenModel Response = await client
+            string clientId = _configuration.GetSection("OAuthCredentials:BattleNet:ClientId").Value;
+            string clientSecret = _configuration.GetSection("OAuthCredentials:BattleNet:ClientSecret").Value;
+            try
+            {
+               AccessTokenModel Response = await client
               .PostAsync("https://us.battle.net/oauth/token")
               .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
-              .WithBasicAuthentication("97cd06eb96aa40e498af899ccfe65129", "o28W9L8PuJdl5AkKk44VJRZuDrYOzyYS")
+              .WithBasicAuthentication(clientId, clientSecret)
               .As<AccessTokenModel>();
+                if (Response != null && Response.access_token != null)
+                {
 
-            if (Response != null && Response.access_token != null)
+                    AppConstants.AccessToken = Response;
+                    AppConstants.AccessToken.acquired_at = DateTime.UtcNow;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            } catch (ApiException ex)
             {
+                throw new Exception(ex.Message);
+            }
+            
 
-                AppConstants.AccessToken = Response;
-                AppConstants.AccessToken.acquired_at = DateTime.UtcNow;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            
         }
     }
 }
