@@ -2,7 +2,6 @@
 using DataAccess.Tables;
 using HtmlAgilityPack;
 using LazyCache;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -28,18 +27,18 @@ namespace API.Controllers
         private readonly IAppCache _cache;
         private readonly IConfiguration _configuration;
         private readonly SettingsModel _settings;
-        private readonly FluentClient whatChoresClient;
-        private readonly FluentClient client;
-        private readonly HtmlDocument doc;
-        public GeneralController(WhatChoresDbContext context, CachingService cache, IOptions<SettingsModel> settingsOptions, IConfiguration configuration)
+        private readonly FluentClient _whatChoresClient;
+        private readonly FluentClient _client;
+        private readonly HtmlDocument _doc;
+        public GeneralController(WhatChoresDbContext context, CachingService cache, IOptions<SettingsModel> settingsOptions, IConfiguration configuration, FluentClient client, HtmlDocument document)
         {
             _context = context;
             _cache = cache;
             _configuration = configuration;
             _settings = settingsOptions.Value;
-            whatChoresClient = new FluentClient(_settings.ApiUrl);
-            client = new FluentClient();
-            doc = new();
+            _whatChoresClient = new FluentClient(_settings.ApiUrl);
+            _client = client;
+            _doc = document;
         }
 
 
@@ -57,12 +56,12 @@ namespace API.Controllers
         public ActionResult PingApi() => Ok("Api is active.");
         
         [HttpGet("updateCharacter")]
-        public async Task<HttpStatusCode> UpdateCharacter(string name, string realm, string region)
+        public async Task<IActionResult> UpdateCharacter(string name, string realm, string region)
         {
             try
             {
 
-                IResponse raiderIOCharacterData = await client
+                IResponse raiderIOCharacterData = await _client
                             .GetAsync("https://raider.io/api/v1/characters/profile")
                             .WithArgument("region", region)
                             .WithArgument("name", name)
@@ -71,43 +70,44 @@ namespace API.Controllers
 
                 tbl_Characters character = await _context.tbl_Characters.Where(c => c.Name == name && c.Realm == realm && c.Region == region).FirstOrDefaultAsync();
 
+                if (character is null) return NotFound();
+
                 character.CharacterData = await raiderIOCharacterData.AsString();
                 character.LastUpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
-                return HttpStatusCode.OK;
+                return Ok();
             } catch (ApiException ex)
             {
-                return ex.Response.Status;
-            }
+                return ex.Status switch
+                {
+                    HttpStatusCode.OK => Ok(),
+                    HttpStatusCode.BadRequest => BadRequest(),
+                    HttpStatusCode.NotFound => NotFound(),
+                    HttpStatusCode.Forbidden => Forbid(),
+                    HttpStatusCode.Unauthorized => Unauthorized(),
+                    HttpStatusCode.NoContent => NoContent(),
+                    _ => StatusCode((int)ex.Status)
+                };
+        }
 
         }
         [HttpGet("pingCharacter")]
-        public async Task<ActionResult> PingCharacter(string name, string realm)
+        public async Task<HttpStatusCode> PingCharacter(string name, string realm)
         {
-            return await _cache.GetOrAddAsync<ActionResult>($"PingCharacter_{realm}_{name}", async () =>
+            return await _cache.GetOrAddAsync($"PingCharacter_{realm}_{name}", async () =>
             {
                 try
                 {
-                    RaiderIOCharacterDataModel data = await client
+                    RaiderIOCharacterDataModel data = await _client
                           .GetAsync("https://raider.io/api/v1/characters/profile")
                           .WithArgument("region", "us")
                           .WithArgument("name", name)
                           .WithArgument("realm", realm.Replace(" ", "-"))
                           .As<RaiderIOCharacterDataModel>();
-                    return Ok();
+                    return HttpStatusCode.OK;
                 } catch (ApiException ex)
                 {
-                    switch (ex.Response.Status)
-                    {
-                        case HttpStatusCode.BadRequest:
-                            return BadRequest("Could not find requested character.");
-                        case HttpStatusCode.Forbidden:
-                            return Forbid("Access is forbidden.");
-                        case HttpStatusCode.NotFound:
-                            return NotFound("Endpoint not found.");
-                        default: 
-                            return BadRequest("Could not find requested character.");
-                    }
+                    return ex.Response.Status;
                 }
             });
         }
@@ -126,7 +126,7 @@ namespace API.Controllers
                     ["locale"] = "en_US"
                 };
 
-                WoWTokenPriceModel ResponseData = await client
+                WoWTokenPriceModel ResponseData = await _client
                     .GetAsync("https://us.api.blizzard.com/data/wow/token/index")
                     .WithOptions(ignoreHttpErrors: true)
                     .WithArguments(ApiPayload)
@@ -175,7 +175,7 @@ namespace API.Controllers
            
             await GetNewAccessToken();
 
-            WoWCharacterRaidsModel data = await client
+            WoWCharacterRaidsModel data = await _client
                 .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/encounters/raids?namespace=profile-us&locale=en_US")
                 .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                 .As<WoWCharacterRaidsModel>();
@@ -250,7 +250,7 @@ namespace API.Controllers
                     var character = await _context.tbl_Characters.Where(x => x.Name == name && x.Realm == realm && x.Region == region).FirstOrDefaultAsync();
                     if (character is null)
                     {
-                        var raiderIOCharacterData = await client
+                        var raiderIOCharacterData = await _client
                              .GetAsync("https://raider.io/api/v1/characters/profile")
                              .WithArgument("region", region)
                              .WithArgument("name", name)
@@ -274,7 +274,7 @@ namespace API.Controllers
                     }
                     else if (character.LastUpdatedAt >= DateTime.UtcNow.AddDays(1)) // character needs updating
                     {
-                        var raiderIOCharacterData = await client
+                        var raiderIOCharacterData = await _client
                             .GetAsync("https://raider.io/api/v1/characters/profile")
                             .WithArgument("region", region)
                             .WithArgument("name", name)
@@ -296,7 +296,7 @@ namespace API.Controllers
                 }
                 characterLookupModel.RaidBossesKilledThisWeek = await GetCharacterRaids(name, realm, region);
 
-                Dictionary<int, int> KeysData = await whatChoresClient
+                Dictionary<int, int> KeysData = await _whatChoresClient
                     .GetAsync($"api/v1/mythicplus/KeystoneVaultReward/keystone-vault-reward")
                     .As<Dictionary<int, int>>();
 
@@ -306,7 +306,7 @@ namespace API.Controllers
             //    {
             //        dictionary.Add(int.Parse(kvp.Key), int.Parse(kvp.Value));
              //   }
-                WoWCharacterMediaModel data = await client
+                WoWCharacterMediaModel data = await _client
                .GetAsync($"https://{region}.api.blizzard.com/profile/wow/character/{realm}/{name}/character-media?namespace=profile-us&locale=en_US&:region=us")
                .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                .As<WoWCharacterMediaModel>();
@@ -348,11 +348,11 @@ namespace API.Controllers
         {
             return await _cache.GetOrAddAsync<ActionResult<List<NewsModel>>>($"GetWoWNews_{limit}", async () =>
             {
-                var newsPage = await client.GetAsync("https://news.blizzard.com/en-gb/world-of-warcraft").AsString();
+                var newsPage = await _client.GetAsync("https://news.blizzard.com/en-gb/world-of-warcraft").AsString();
 
-                doc.LoadHtml(newsPage);
+                _doc.LoadHtml(newsPage);
 
-                var ol = doc.DocumentNode.SelectSingleNode("//ol[@class='ArticleList']");
+                var ol = _doc.DocumentNode.SelectSingleNode("//ol[@class='ArticleList']");
 
                 HtmlNodeCollection liNodes = ol.SelectNodes(".//li");
                 List<NewsModel> newsPosts = [];
@@ -379,7 +379,7 @@ namespace API.Controllers
                         news.Description = liNodes[node].SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
                         newsPosts.Add(news);
                     }
-                    client.Dispose();
+                    _client.Dispose();
 
                     return Ok(newsPosts);
                 } else if (liNodes is not null)
@@ -438,7 +438,7 @@ namespace API.Controllers
         }
         private async Task<string> GetClassColor(string char_class)
         {                     
-            List<ClassNameColor> classMap = await whatChoresClient
+            List<ClassNameColor> classMap = await _whatChoresClient
               .GetAsync("api/v1/general/class?getColor=true")
               .As<List<ClassNameColor>>();
            
@@ -480,7 +480,7 @@ namespace API.Controllers
             string clientSecret = _configuration.GetSection("OAuthCredentials:BattleNet:ClientSecret").Value;
             try
             {
-               AccessTokenModel Response = await client
+               AccessTokenModel Response = await _client
               .PostAsync("https://us.battle.net/oauth/token")
               .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
               .WithBasicAuthentication(clientId, clientSecret)

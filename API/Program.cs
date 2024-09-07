@@ -1,4 +1,5 @@
 using DataAccess;
+using HtmlAgilityPack;
 using LazyCache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -11,6 +12,7 @@ builder.Services.AddCors();
 builder.Services.AddControllers();
 
 builder.Services.AddSingleton<CachingService>();
+builder.Services.AddSingleton<HtmlDocument>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -42,12 +44,18 @@ else
 }
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy",
+    options.AddPolicy("DevPolicy",
         builder => builder
             .AllowAnyMethod()
             .AllowCredentials()
-            .SetIsOriginAllowed((host) => true)
+            .WithOrigins("http://127.0.0.1", "http://localhost:5173", "http://localhost")
             .AllowAnyHeader());
+    options.AddPolicy("ProdPolicy",
+        builder => builder
+        .AllowAnyMethod()
+        .AllowCredentials()
+        .WithOrigins("https://whatchores.furyshiftz.com")
+        .AllowAnyHeader());
 });
 
 builder.Services.AddSingleton<FluentClient>();
@@ -68,7 +76,14 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 app.UseHttpsRedirection();
-app.UseCors("CorsPolicy");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevPolicy");
+} else
+{
+    app.UseCors("ProdPolicy");
+}
 
 app.UseResponseCaching();
 

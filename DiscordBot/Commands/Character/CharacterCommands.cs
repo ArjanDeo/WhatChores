@@ -7,7 +7,7 @@ namespace DiscordBot.Commands.Character
 {
     public class CharacterCommands : ApplicationCommandModule
     {
-        public FluentClient client;
+        private readonly FluentClient client;
         public CharacterCommands()
         {
             client = new();
@@ -38,9 +38,7 @@ namespace DiscordBot.Commands.Character
             embed.Color = DiscordColor.Magenta;
             embed.Url = response.profile_url;
             embed.AddField("M+ Score", response.mythic_plus_scores_by_season[0].scores.all.ToString());
-            embed.AddField("Vault of the Incarnates", response.raid_progression.vaultoftheincarnates.summary, true);
-            embed.AddField("Aberrus, the Shadowed Crucible", response.raid_progression.aberrustheshadowedcrucible.summary, true);
-            embed.AddField("Amirdrassil, the Dream's Hope", response.raid_progression.amirdrassilthedreamshope.summary, true);
+            embed.AddField("Nerub-ar Palace", response.raid_progression.nerubarpalace.summary, true);
             embed.Thumbnail.Url = response.thumbnail_url;
             embed.ImageUrl = $"https://cdnassets.raider.io/images/profile/masthead_backdrops/v2/{response.profile_banner}.jpg";
             embed.Description = $"[WoW Armory](https://worldofwarcraft.blizzard.com/en-us/character/{response.region}/{response.realm}/{response.name}) | [Warcraft Logs](https://www.warcraftlogs.com/character/{response.region}/{response.realm}/{response.name}) | [Raider.io](https://raider.io/characters/{response.region}/{response.realm}/{response.name})\nClass/Specialization: {response.active_spec_name} {response.char_class}\nRealm: {response.realm}";
