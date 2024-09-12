@@ -1,6 +1,8 @@
 ﻿using DataAccess;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Models.BattleNet.OAuth;
 using Models.BattleNet.Public.Character.MythicKeystone;
 using Models.Constants;
 using Pathoschild.Http.Client;
@@ -9,10 +11,12 @@ namespace API.Controllers
 {
     [Route("api/v1/[controller]/[action]")]
     [ApiController]
-    public class MythicPlusController(WhatChoresDbContext context, FluentClient client) : ControllerBase
+    public class MythicPlusController(WhatChoresDbContext context, FluentClient client, IConfiguration configuration) : ControllerBase
     {
         private readonly WhatChoresDbContext _context = context;       
         private readonly FluentClient _client = client;
+        private IConfiguration _configuration = configuration;
+
         [HttpGet("keystone-vault-reward")]
         public async Task<ActionResult<object>> KeystoneVaultReward(int? keyLevel)
         {
@@ -62,6 +66,8 @@ namespace API.Controllers
         [HttpGet]
         public async Task<IActionResult> CharacterRunsLibrary(string name, string realm, string region)
         {
+            await GetNewAccessToken();
+
             WoWCharacterMythicKeystoneModel data = await _client.
                 GetAsync($"https://us.api.blizzard.com/profile/wow/character/{realm}/{name}/mythic-keystone-profile")
                 .WithArgument("namespace", "profile-us")
@@ -70,6 +76,47 @@ namespace API.Controllers
                 .WithBearerAuthentication(AppConstants.AccessToken.access_token)
                 .As<WoWCharacterMythicKeystoneModel>();
             return Ok(data);
+        }
+        private async Task<bool> GetNewAccessToken()
+        {
+            // If there is an access token already, and it has not expired yet.
+            if (AppConstants.AccessToken != null && AppConstants.AccessToken.acquired_at > DateTime.UtcNow.AddSeconds(AppConstants.AccessToken.expires_in))
+            {
+                return true;
+            }
+            Dictionary<string, string> AccessTokenPayload = new()
+            {
+                [":region"] = "us",
+                ["grant_type"] = "client_credentials"
+            };
+            string clientId = _configuration.GetSection("OAuthCredentials:BattleNet:ClientId").Value;
+            string clientSecret = _configuration.GetSection("OAuthCredentials:BattleNet:ClientSecret").Value;
+            try
+            {
+                AccessTokenModel Response = await _client
+               .PostAsync("https://us.battle.net/oauth/token")
+               .WithBody(p => p.FormUrlEncoded(AccessTokenPayload))
+               .WithBasicAuthentication(clientId, clientSecret)
+               .As<AccessTokenModel>();
+                if (Response != null && Response.access_token != null)
+                {
+
+                    AppConstants.AccessToken = Response;
+                    AppConstants.AccessToken.acquired_at = DateTime.UtcNow;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (ApiException ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+
+
         }
     }
 }

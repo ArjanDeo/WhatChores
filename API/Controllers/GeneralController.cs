@@ -2,6 +2,7 @@
 using DataAccess.Tables;
 using HtmlAgilityPack;
 using LazyCache;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -43,7 +44,7 @@ namespace API.Controllers
 
 
         [HttpGet("realms")]
-        [SwaggerOperation(Summary = "Gets Realms", Description = "Gets all the realms", OperationId = "GetRealmData", Tags = ["General", "Get"])]
+        [Authorize]
         public async Task<List<RealmModel>> GetRealms()
         {
             var realmNames = await _context.tbl_USRealms

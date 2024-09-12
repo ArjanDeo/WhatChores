@@ -1,6 +1,7 @@
 using DataAccess;
 using HtmlAgilityPack;
 using LazyCache;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Models.WhatChores.API;
@@ -17,18 +18,42 @@ builder.Services.AddSingleton<HtmlDocument>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    if (builder.Environment.IsDevelopment())
     {
-        Version = "v1",
-        Title = "What Chores? API",
-        Description = "An API to get information about World of Warcraft\n\nThe base uri is https://localhost:7031/\n\nThe data is from my web app, <a href=\"https://localhost:44368\">What Chores</a>.",       
-    });
+        options.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Version = "v1",
+            Title = "What Chores? API",
+            Description = "An API to get information about World of Warcraft\n\n" +
+        "The base uri is https://localhost:7031/" +
+        "\n\nThe data is for my web app, <a href=\"https://localhost:5173\">What Chores</a>.",
+        });
+    } else
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Version = "v1",
+            Title = "What Chores? API",
+            Description = "An API to get information about World of Warcraft\n\n" +
+       "The base uri is https://whatchoresapi.azurewebsites.net" +
+       "\n\nThe data is for my web app, <a href=\"https://whatchores.furyshiftz.com\">What Chores</a>.",
+        });
+    }
+    
     options.CustomSchemaIds(type => $"{type.Name}_{Guid.NewGuid()}");
 });
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.Authority = "https://dev-bn6n7i4zrwxk0s0y.us.auth0.com/";
+    options.Audience = "https://whatchores.furyshiftz.com";
+});
 
-
-if(builder.Environment.IsDevelopment())
+if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddDbContext<WhatChoresDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DevConnection")));
@@ -84,6 +109,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseCors("ProdPolicy");
 }
+app.UseAuthentication();
 
 app.UseResponseCaching();
 
@@ -92,3 +118,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+public partial class Program { }
