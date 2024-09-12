@@ -366,3 +366,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /API/appsettings.json
 /package-lock.json
+/API.IntegrationTests/secrets.txt
