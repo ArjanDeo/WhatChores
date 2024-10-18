@@ -44,7 +44,6 @@ namespace API.Controllers
 
 
         [HttpGet("realms")]
-        [Authorize]
         public async Task<List<RealmModel>> GetRealms()
         {
             var realmNames = await _context.tbl_USRealms
@@ -167,7 +166,7 @@ namespace API.Controllers
                 return Ok(realmNames);
             }
         }
-       
+
         private async Task<List<RaidEncounter>> GetCharacterRaids(string name, string realm, string region)
         {
             realm = realm.ToLower();
@@ -239,9 +238,9 @@ namespace API.Controllers
             name = name.ToLower();
             realm = realm.ToLower();
             region = region.ToLower();
-           
+
             return await _cache.GetOrAddAsync<ActionResult<CharacterLookupModel>>($"GetCharacter_{name}_{region}_{realm}", async () => // Caches for default time (20 mins)
-            {              
+            {
                 await GetNewAccessToken();
 
                 CharacterLookupModel characterLookupModel = new();
@@ -273,7 +272,7 @@ namespace API.Controllers
 
                         raiderIOCharacterDataModel = await raiderIOCharacterData.As<RaiderIOCharacterDataModel>();
                     }
-                    else if (character.LastUpdatedAt >= DateTime.UtcNow.AddDays(1)) // character needs updating
+                    else if (character.LastUpdatedAt <= DateTime.UtcNow.AddDays(-1)) // character needs updating
                     {
                         var raiderIOCharacterData = await _client
                             .GetAsync("https://raider.io/api/v1/characters/profile")
@@ -298,7 +297,7 @@ namespace API.Controllers
                 characterLookupModel.RaidBossesKilledThisWeek = await GetCharacterRaids(name, realm, region);
 
                 Dictionary<int, int> KeysData = await _whatChoresClient
-                    .GetAsync($"api/v1/mythicplus/KeystoneVaultReward/keystone-vault-reward")
+                    .GetAsync($"api/v1/mythicplus/keystoneVaultReward")
                     .As<Dictionary<int, int>>();
 
               //  var dictionary = new Dictionary<int, int>();
@@ -380,8 +379,6 @@ namespace API.Controllers
                         news.Description = liNodes[node].SelectSingleNode(".//div[@class='ArticleListItem-description']")?.InnerText.Trim();
                         newsPosts.Add(news);
                     }
-                    _client.Dispose();
-
                     return Ok(newsPosts);
                 } else if (liNodes is not null)
                 {
@@ -468,7 +465,7 @@ namespace API.Controllers
         private async Task<bool> GetNewAccessToken()
         {
             // If there is an access token already, and it has not expired yet.
-            if (AppConstants.AccessToken != null && AppConstants.AccessToken.acquired_at > DateTime.UtcNow.AddSeconds(AppConstants.AccessToken.expires_in))
+            if (AppConstants.AccessToken != null && AppConstants.AccessToken.acquired_at < DateTime.UtcNow.AddSeconds(AppConstants.AccessToken.expires_in))
             {
                 return true;
             }
@@ -497,13 +494,15 @@ namespace API.Controllers
                 {
                     return false;
                 }
-            } catch (ApiException ex)
-            {
-                throw new Exception(ex.Message);
             }
-            
+            catch (ApiException ex)
+            {
+                string responseText = await ex.Response.AsString();
+                throw new Exception($"The API responded with HTTP {ex.Response.Status}: {responseText}");
+            }
 
-            
+
+
         }
     }
 }

@@ -9,15 +9,15 @@ using Pathoschild.Http.Client;
 
 namespace API.Controllers
 {
-    [Route("api/v1/[controller]/[action]")]
+    [Route("api/v1/mythicplus")]
     [ApiController]
     public class MythicPlusController(WhatChoresDbContext context, FluentClient client, IConfiguration configuration) : ControllerBase
     {
-        private readonly WhatChoresDbContext _context = context;       
+        private readonly WhatChoresDbContext _context = context;
         private readonly FluentClient _client = client;
-        private IConfiguration _configuration = configuration;
+        private readonly IConfiguration _configuration = configuration;
 
-        [HttpGet("keystone-vault-reward")]
+        [HttpGet("keystoneVaultReward")]
         public async Task<ActionResult<object>> KeystoneVaultReward(int? keyLevel)
         {
             // Check for keyLevel less than 2
@@ -63,7 +63,7 @@ namespace API.Controllers
                 return Ok(result);
             }
         }
-        [HttpGet]
+        [HttpGet("characterRunsLibrary")]
         public async Task<IActionResult> CharacterRunsLibrary(string name, string realm, string region)
         {
             await GetNewAccessToken();

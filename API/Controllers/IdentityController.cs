@@ -4,11 +4,11 @@ using System.Security.Claims;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/v1/identity")]
     [ApiController]
     public class IdentityController : ControllerBase
     {
-        [HttpGet]
+        [HttpGet("claims")]
         public ActionResult<IEnumerable<KeyValuePair<string,string>>> GetClaims() => Ok(User.Claims.Select(c => new { c.Type, c.Value }));
     }
 }
