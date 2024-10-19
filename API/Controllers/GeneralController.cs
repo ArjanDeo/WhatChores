@@ -75,6 +75,7 @@ namespace API.Controllers
                 character.CharacterData = await raiderIOCharacterData.AsString();
                 character.LastUpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
+                _cache.Remove($"GetCharacter_{name}_{region}_{realm}");
                 return Ok();
             } catch (ApiException ex)
             {
@@ -111,7 +112,7 @@ namespace API.Controllers
                 }
             });
         }
-        [HttpGet("wowtoken")]       
+        [HttpGet("wowtoken")]
         public async Task<ActionResult<WoWTokenPriceModel>> GetTokenPrice()
         {
             return await _cache.GetOrAddAsync<ActionResult<WoWTokenPriceModel>>("GetToken", async () => 
@@ -232,7 +233,7 @@ namespace API.Controllers
             }
             return clearedBossList;            
         }
-        [HttpGet("character")]       
+        [HttpGet("character")]
         public async Task<ActionResult<CharacterLookupModel>> GetCharacter(string name, string realm, string region)
         {
             name = name.ToLower();
