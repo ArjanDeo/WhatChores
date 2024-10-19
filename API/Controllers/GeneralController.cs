@@ -290,9 +290,9 @@ namespace API.Controllers
                     {
                         raiderIOCharacterDataModel = JsonConvert.DeserializeObject<RaiderIOCharacterDataModel>(character.CharacterData);
                     }
-                } catch
+                } catch (ApiException ex)
                 {
-                    return BadRequest("Character not found.");
+                    return BadRequest($"Character not found. {ex.Message}");
                 }
                 characterLookupModel.RaidBossesKilledThisWeek = await GetCharacterRaids(name, realm, region);
 
