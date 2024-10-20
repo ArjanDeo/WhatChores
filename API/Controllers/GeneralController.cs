@@ -93,9 +93,9 @@ namespace API.Controllers
 
         }
         [HttpGet("pingCharacter")]
-        public async Task<HttpStatusCode> PingCharacter(string name, string realm)
+        public async Task<ActionResult> PingCharacter(string name, string realm)
         {
-            return await _cache.GetOrAddAsync($"PingCharacter_{realm}_{name}", async () =>
+            return await _cache.GetOrAddAsync<ActionResult>($"PingCharacter_{realm}_{name}", async () =>
             {
                 try
                 {
@@ -105,10 +105,10 @@ namespace API.Controllers
                           .WithArgument("name", name)
                           .WithArgument("realm", realm.Replace(" ", "-"))
                           .As<RaiderIOCharacterDataModel>();
-                    return HttpStatusCode.OK;
+                    return Ok();
                 } catch (ApiException ex)
                 {
-                    return ex.Response.Status;
+                    return NotFound();
                 }
             });
         }
